@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.kissanimedev" name="Kiss Anime Dev" version="0.1.0" provider-name="jdollar">
+    <requires>
+        <import addon="xbmc.python" version="2.25.0"/>
+        <import addon="script.module.beautifulsoup4" version="4.3.2"/>
+        <import addon="script.module.js2py" version="1.0.0"/>
+        <import addon="script.module.cfscrape" version="1.0.0"/>
+        <import addon="script.module.t0mm0.common" version="2.1.1"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+    	<summary lang="en">Provides a kodi addon that is capable of accessing the kissanime site</summary>
+        <description lang="en">Anime Videos from KissAnime</description>
+        <disclaimer lang="en"></disclaimer>
+        <language>en</language>
+        <platform>all</platform>
+        <license>MIT</license>
+        <forum></forum>
+        <website></website>
+        <email></email>
+        <source></source>
+    </extension>
+</addon>
