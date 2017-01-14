@@ -18,6 +18,7 @@ class KissAnime:
 
         self.scraper = KissAnimeScrape()
         self.typeParam = args.get('type', None)
+        self.urlParam = args.get('url', None)
     # End init
 
     def run(self):
@@ -25,6 +26,8 @@ class KissAnime:
             self.buildMainMenu()
         elif self.typeParam[0] == ALL_VIDEOS_ACTION:
             self.allVideoLinks()
+        elif self.typeParam[0] == EPISODES_ACTION:
+            self.episodeLinks(self.urlParam[0])
     # End run
 
     def buildMainMenu(self):
@@ -41,10 +44,25 @@ class KissAnime:
         allReturn = self.scraper.all()
         videoLinks = allReturn['links']
         for videoLinkUrl, videoLinkText in videoLinks.items():
-           li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
-           xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=videoLinkUrl, listitem=li, isFolder=True)
+            params = {'type': EPISODES_ACTION, 'url': videoLinkUrl}
+            url = BASE_APP_URL + '?' + urllib.urlencode(params)
+            li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
+            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
         # End for
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
     # End generateVideoLinks
+
+    def episodeLinks(self, url):
+        episodeReturn = self.scraper.episodes(url)
+        videoLinks = episodeReturn['links']
+        for videoLinkUrl, videoLinkText in videoLinks.items():
+            params = {'type': EPISODES_ACTION, 'url': videoLinkUrl}
+            url = BASE_APP_URL + '?' + urllib.urlencode(params)
+            li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
+            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=videoLinkUrl, listitem=li, isFolder=True)
+        # End for
+
+        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+    # End episodeLinks
 # End KissAnime

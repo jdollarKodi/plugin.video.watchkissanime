@@ -16,6 +16,7 @@ SEARCH_LABEL = 'Search'
 
 ALL_VIDEOS_ACTION = 'allVideos'
 SEARCH_ACTION = 'search'
+EPISODES_ACTION = 'episode'
 
 
 MAIN_MENU_ITEMS = OrderedDict(
