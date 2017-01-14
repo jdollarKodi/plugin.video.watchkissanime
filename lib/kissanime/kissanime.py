@@ -1,6 +1,7 @@
 import sys
 import urlparse
 import urllib
+import xbmc
 import xbmcplugin
 import xbmcgui
 
@@ -17,17 +18,21 @@ class KissAnime:
         args = urlparse.parse_qs(sys.argv[2][1:])
 
         self.scraper = KissAnimeScrape()
-        self.typeParam = args.get('type', None)
+        self.typeParam = args.get('type', 'None')
+        if self.typeParam is not None:
+            print self.typeParam[0]
         self.urlParam = args.get('url', None)
     # End init
 
     def run(self):
-        if self.typeParam is None:
-            self.buildMainMenu()
-        elif self.typeParam[0] == ALL_VIDEOS_ACTION:
+        if self.typeParam[0] == ALL_VIDEOS_ACTION:
             self.allVideoLinks()
         elif self.typeParam[0] == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
+        elif self.typeParam[0] == VIDEO_ACTION:
+            self.playVideo(self.urlParam[0])
+        else:
+            self.buildMainMenu()
     # End run
 
     def buildMainMenu(self):
@@ -57,12 +62,24 @@ class KissAnime:
         episodeReturn = self.scraper.episodes(url)
         videoLinks = episodeReturn['links']
         for videoLinkUrl, videoLinkText in videoLinks.items():
-            params = {'type': EPISODES_ACTION, 'url': videoLinkUrl}
+            params = self.generateParamsObj(VIDEO_ACTION, videoLinkUrl)
             url = BASE_APP_URL + '?' + urllib.urlencode(params)
             li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=videoLinkUrl, listitem=li, isFolder=True)
+            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
         # End for
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
     # End episodeLinks
+
+    def playVideo(self, url):
+        videoReturn = self.scraper.video(url)
+
+        play_item = xbmcgui.ListItem(path=videoReturn)
+        xbmc.Player().play(videoReturn, play_item)
+        #xbmcplugin.setResolvedUrl(__handle__, True, listitem=play_item)
+    # End playVideo
+
+    def generateParamsObj(self, urlType, url):
+        return { 'type': urlType, 'url': url }
+    # End generateParamsObj
 # End KissAnime
