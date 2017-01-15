@@ -30,7 +30,6 @@ class KissAnime:
 
         self.scraper = KissAnimeScrape()
         self.typeParam = args.get('type', 'None')
-        print self.typeParam[0]
         self.urlParam = args.get('url', None)
     # End init
 
@@ -38,7 +37,8 @@ class KissAnime:
     # the plugin
     def run(self):
         if self.typeParam[0] == ALL_VIDEOS_ACTION:
-            self.allVideoLinks()
+            url = None if self.urlParam is None else self.urlParam[0]
+            self.allVideoLinks(url)
         elif self.typeParam[0] == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
@@ -61,11 +61,12 @@ class KissAnime:
 
     ## Builds out a menu for when the user specifies they want to view all
     #  available animes
-    def allVideoLinks(self):
-        allReturn = self.scraper.all()
+    def allVideoLinks(self, urlParam):
+        allReturn = self.scraper.all(urlParam)
         videoLinks = allReturn['links']
         for videoLinkUrl, videoLinkObj in videoLinks.items():
-            url = self.generateUrl(EPISODES_ACTION, videoLinkUrl)
+            urlAction = ALL_VIDEOS_ACTION if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
+            url = self.generateUrl(urlAction, videoLinkUrl)
             li = xbmcgui.ListItem(videoLinkObj['name'])
             li.setArt({'icon': videoLinkObj['image']})
             li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})

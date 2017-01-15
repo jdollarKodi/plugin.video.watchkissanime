@@ -7,6 +7,8 @@ DEFAULT_VIDEO_IMAGE = 'DefaultVideo.jpg'
 CONTENT_TYPE_MOVIES = 'movies'
 
 LIST_TYPE_DIR = 'directory'
+ITEM_TYPE = 'item'
+PAGE_TYPE = 'page'
 
 LIST_ALL_ANIME_LABEL = 'List All Anime'
 SEARCH_LABEL = 'Search'
@@ -18,7 +20,6 @@ ALL_VIDEOS_ACTION = 'allVideos'
 SEARCH_ACTION = 'search'
 EPISODES_ACTION = 'episode'
 VIDEO_ACTION = 'video'
-
 
 MAIN_MENU_ITEMS = OrderedDict(
     [

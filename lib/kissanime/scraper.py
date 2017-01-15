@@ -32,36 +32,18 @@ class KissAnimeScrape:
         return self.scraper.get(scrapeUrl)
 
     ## Returns a list of all the anime currently on the site
-    def all(self):
-        response = self.getResponseFromServer(KissAnimeScrape.ANIME_LIST_ENDPOINT)
+    def all(self, urlParam):
+        url = KissAnimeScrape.ANIME_LIST_ENDPOINT if urlParam is None else urlParam
+        response = self.getResponseFromServer(url)
+        self.setupSoup(response)
 
-        soup = BeautifulSoup(response.content,'html.parser')
-        listingObj = soup.find('table', { "class": "listing" })
-        tableRows = listingObj.find_all('tr')
-        videoLinks = OrderedDict()
-
-        for tableRow in tableRows:
-            if tableRow.td is not None:
-                cell = tableRow.td
-                image = ''
-                description = ''
-
-                if cell['title'] is not None:
-                    image = re.search(KissAnimeScrape.ANIME_IMAGE_REGEX, cell['title']).group(1)
-                    description = re.search(KissAnimeScrape.ANIME_DESC_REGEX, cell['title']).group(1)
-
-
-                anchor = cell.a
-                videoLinks[anchor['href']] = {
-                    'name': anchor.string.strip(),
-                    'image': image,
-                    'description': description.strip()
-                }
-
-        videoLinks = self.addPageLinks(soup, videoLinks)
+        links = OrderedDict()
+        links = self.addPrevLink(links)
+        links = self.parseListingRows(links, self.allParser)
+        links = self.addNextLink(links)
 
         return {
-            'links': videoLinks,
+            'links': links,
             'type': LIST_TYPE_DIR
         }
 
@@ -70,10 +52,17 @@ class KissAnimeScrape:
     #  @param episodesEndpoint string endpoint that points to the episode list
     def episodes(self, episodesEndpoint):
         response = self.getResponseFromServer(episodesEndpoint)
-        videoLinks = self.getLinksFromListingObject(response)
+        self.setupSoup(response)
+
+        links = OrderedDict()
+        links = self.addPrevLink(links)
+        links = self.parseListingRows(links, self.episodesParser)
+        links = self.addNextLink(links)
+
+        #videoLinks = self.getLinksFromListingObject(response)
 
         return {
-            'links': videoLinks,
+            'links': links,
             'type': LIST_TYPE_DIR
         }
 
@@ -83,23 +72,64 @@ class KissAnimeScrape:
         response = self.getResponseFromServer(videoPageUrl)
         return self.getVideoSrcUrl(response)
 
-    ## Generates next and pervious page menu items if they are found on the webpage
-    def addPageLinks(self, soup, links):
-        prevLink = soup.find('a', text=re.compile(KissAnimeScrape.PREV_RESPONSE_TEXT), attrs={'page':True})
-        if prevLink is not None:
-            links[prevLink['href']] = {
-                "name": PREV_LABEL,
-                "image": DEFAULT_VIDEO_IMAGE,
-                'description': PREV_LABEL
-            }
+    def allParser(self, tableRow, links):
+        cell = tableRow.td
+        image = ''
+        description = ''
 
-        nextLink = soup.find('a', text=re.compile(KissAnimeScrape.NEXT_RESPONSE_TEXT), attrs={'page':True})
+        if cell['title'] is not None:
+            image = re.search(KissAnimeScrape.ANIME_IMAGE_REGEX, cell['title']).group(1)
+            description = re.search(KissAnimeScrape.ANIME_DESC_REGEX, cell['title']).group(1)
+
+        anchor = cell.a
+        links[anchor['href']] = self.generateLinkObj(
+            anchor.string.strip(),
+            image,
+            description.strip()
+        )
+
+        return links
+
+    def episodesParser(self, tableRow, links):
+        anchor = tableRow.td.a
+        links[anchor['href']] = self.generateLinkObj(
+            anchor.string.strip(),
+            '',
+            ''
+        )
+
+        return links
+
+    def parseListingRows(self, links, parser):
+        tableRows = self.getListingRows()
+
+        for tableRow in tableRows:
+            if tableRow.td is not None:
+                links = parser(tableRow, links)
+
+        return links
+
+    def addPrevLink(self, links):
+        prevLink = self.soup.find('a', text=re.compile(KissAnimeScrape.PREV_RESPONSE_TEXT), attrs={'page':True})
+        if prevLink is not None:
+            links[prevLink['href']] = self.generateLinkObj(
+                PREV_LABEL,
+                DEFAULT_VIDEO_IMAGE,
+                PREV_LABEL,
+                PAGE_TYPE
+            )
+
+        return links
+
+    def addNextLink(self, links):
+        nextLink = self.soup.find('a', text=re.compile(KissAnimeScrape.NEXT_RESPONSE_TEXT), attrs={'page':True})
         if nextLink is not None:
-            links[nextLink['href']] = {
-                'name': NEXT_LABEL,
-                'image': DEFAULT_VIDEO_IMAGE,
-                'description': NEXT_LABEL
-            }
+            links[nextLink['href']] = self.generateLinkObj(
+                NEXT_LABEL,
+                DEFAULT_VIDEO_IMAGE,
+                NEXT_LABEL,
+                PAGE_TYPE
+            )
 
         return links
 
@@ -107,36 +137,28 @@ class KissAnimeScrape:
     #  @param response       dom tree obj returned by the scraper that will be
     #                       traversed to find the videoUrl
     def getVideoSrcUrl(self, response):
-        soup = BeautifulSoup(response.content, 'html.parser')
-        qualitySelector = soup.find('select', {"id": "selectQuality"})
+        self.soup = BeautifulSoup(response.content, 'html.parser')
+        qualitySelector = self.soup.find('select', {"id": "selectQuality"})
         videoUrl = self.getDecryptedVideoLink(qualitySelector.option['value'])
         return {
             'url': videoUrl
         }
 
-    ## Traverses the table object for anime lists and episode lists to return
-    #  All of the links to various animes or episodes.
-    #
-    #  @param response      dom tree obj returned by the scraper that will be
-    #                       traversed to find the link
-    def getLinksFromListingObject(self, response):
-        soup = BeautifulSoup(response.content,'html.parser')
-        listingObj = soup.find('table', { "class": "listing" })
+    def getListingRows(self):
+        listingObj = self.soup.find('table', { "class": "listing" })
         tableRows = listingObj.find_all('tr')
-        videoLinks = OrderedDict()
+        return tableRows
 
-        for tableRow in tableRows:
-            if tableRow.td is not None:
-                anchor = tableRow.td.a
-                videoLinks[anchor['href']] = {
-                    "name": anchor.string.strip(),
-                    "image": "",
-                    "description": ""
-                }
+    def setupSoup(self, response):
+        self.soup = BeautifulSoup(response.content,'html.parser')
 
-        videoLinks = self.addPageLinks(soup, videoLinks)
-
-        return videoLinks
+    def generateLinkObj(self, name, image, description, itemType=ITEM_TYPE):
+        return {
+            "name": name,
+            "image": image,
+            "description": description,
+            "type": itemType
+        }
 
     ## Python interpretation of kiss anime's decryption algorithm from their
     #  javascript. What will be used to decrypt their encoded video url
