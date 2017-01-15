@@ -58,39 +58,34 @@ class KissAnime:
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
-    #End buildMainMenu
 
     ## Builds out a menu for when the user specifies they want to view all
     #  available animes
     def allVideoLinks(self):
         allReturn = self.scraper.all()
         videoLinks = allReturn['links']
-        for videoLinkUrl, videoLinkText in videoLinks.items():
-            params = self.generateParamsObj(EPISODES_ACTION, videoLinkUrl)
-            url = BASE_APP_URL + '?' + urllib.urlencode(params)
-            li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
+        for videoLinkUrl, videoLinkObj in videoLinks.items():
+            url = self.generateUrl(EPISODES_ACTION, videoLinkUrl)
+            li = xbmcgui.ListItem(videoLinkObj['name'])
+            li.setArt({'icon': videoLinkObj['image']})
+            li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
-        # End for
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
-    # End generateVideoLinks
 
     ## Builds out a menu for when the user selects a anime to watch that will
     #  display all of the various episodes
-    #  
+    #
     #  @param url string url of the webpage that contains a list of the episodes
     def episodeLinks(self, url):
         episodeReturn = self.scraper.episodes(url)
         videoLinks = episodeReturn['links']
-        for videoLinkUrl, videoLinkText in videoLinks.items():
-            params = self.generateParamsObj(VIDEO_ACTION, videoLinkUrl)
-            url = BASE_APP_URL + '?' + urllib.urlencode(params)
-            li = xbmcgui.ListItem(videoLinkText, iconImage='DefaultVideo.jpg')
+        for videoLinkUrl, videoLinkObj in videoLinks.items():
+            url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
+            li = xbmcgui.ListItem(videoLinkObj['name'], iconImage='DefaultVideo.jpg')
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
-        # End for
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
-    # End episodeLinks
 
     ## Plays the video url passed into this function
     #
@@ -100,7 +95,6 @@ class KissAnime:
         videoUrl = videoObj['url']
         videoListItem = xbmcgui.ListItem(path=videoUrl)
         xbmc.Player().play(videoUrl, videoListItem)
-    # End playVideo
 
     ## Helper function that generates a params object that contains a type
     #  and url value. Will be used to pass back into this plugin to tell the
@@ -111,7 +105,6 @@ class KissAnime:
     #                         to new menus
     #  @param url string     specifies the url that contains content that a new
     #                        menu will scrape information from
-    def generateParamsObj(self, urlType, url):
-        return { 'type': urlType, 'url': url }
-    # End generateParamsObj
-# End KissAnime
+    def generateUrl(self, urlType, url):
+        params = { 'type': urlType, 'url': url}
+        return BASE_APP_URL + '?' + urllib.urlencode(params)

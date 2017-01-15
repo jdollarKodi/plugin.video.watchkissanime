@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.kissanimedev" name="Kiss Anime Dev" version="0.1.0" provider-name="jdollar">
+<addon id="plugin.video.kissanimedev" name="Kiss Anime Dev" version="0.1.1" provider-name="jdollar">
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
         <import addon="script.module.beautifulsoup4" version="4.3.2"/>
-        <import addon="script.module.js2py" version="1.0.0"/>
-        <import addon="script.module.cfscrape" version="1.0.0"/>
+        <import addon="script.module.cfscrape" version="1.6.8"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>
