@@ -16,6 +16,8 @@ class KissAnimeScrape:
     ## Endpoint where all of the anime is listed in a list format
     ANIME_LIST_ENDPOINT = 'AnimeList'
 
+    ANIME_SEARCH_ENDPOINT = 'Search/Anime'
+
     ANIME_IMAGE_REGEX = re.compile('src=\"(.*?)\"')
     ANIME_DESC_REGEX = re.compile('<p>(.*?)<\/p>', re.DOTALL)
 
@@ -30,6 +32,10 @@ class KissAnimeScrape:
     def getResponseFromServer(self, endpoint):
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
         return self.scraper.get(scrapeUrl)
+
+    def postResponseToServer(self, endpoint, data):
+        scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
+        return self.scraper.post(scrapeUrl, data=data)
 
     ## Returns a list of all the anime currently on the site
     def all(self, urlParam):
@@ -71,6 +77,21 @@ class KissAnimeScrape:
     def video(self, videoPageUrl):
         response = self.getResponseFromServer(videoPageUrl)
         return self.getVideoSrcUrl(response)
+
+    def search(self, keyword):
+        data = { "keyword": keyword }
+        response = self.postResponseToServer(KissAnimeScrape.ANIME_SEARCH_ENDPOINT, data)
+        self.setupSoup(response)
+        print response.content
+
+        links = OrderedDict()
+        links = self.addPrevLink(links)
+        links = self.parseListingRows(links, self.allParser)
+        links = self.addNextLink(links)
+        return {
+            'links': links,
+            'type': LIST_TYPE_DIR
+        }
 
     def allParser(self, tableRow, links):
         cell = tableRow.td

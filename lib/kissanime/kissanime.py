@@ -43,6 +43,8 @@ class KissAnime:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
             self.playVideo(self.urlParam[0])
+        elif self.typeParam[0] == SEARCH_ACTION:
+            self.search()
         else:
             self.buildMainMenu()
     # End run
@@ -84,6 +86,24 @@ class KissAnime:
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
             li = xbmcgui.ListItem(videoLinkObj['name'], iconImage='DefaultVideo.jpg')
+            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
+
+        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+
+    def search(self):
+        dialog = xbmcgui.Dialog()
+        keywordInput = dialog.input('Keyword', type=xbmcgui.INPUT_ALPHANUM)
+        if keywordInput is None or keywordInput == '':
+            return
+
+        searchReturn = self.scraper.search(keywordInput)
+        videoLinks = searchReturn['links']
+
+        for videoLinkUrl, videoLinkObj in videoLinks.items():
+            url = self.generateUrl(EPISODES_ACTION, videoLinkUrl)
+            li = xbmcgui.ListItem(videoLinkObj['name'])
+            li.setArt({'icon': videoLinkObj['image']})
+            li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
