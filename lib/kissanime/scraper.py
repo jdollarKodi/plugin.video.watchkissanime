@@ -7,21 +7,27 @@ from bs4 import BeautifulSoup
 
 from collections import OrderedDict
 
+## A class containing all of the scraping logic in order to extract
+#  information from the kiss anime site
 class KissAnimeScrape:
+    ## Base URL/Host where the scraper will be pulling data from
     BASE_URL = 'http://kissanime.ru/'
-    ANIME_LIST_ENDPOINT = 'AnimeList'
-    VIDEO_REGEX = re.compile('http.*googlevideo(.*?)\"')
 
+    ## Endpoint where all of the anime is listed in a list format
+    ANIME_LIST_ENDPOINT = 'AnimeList'
+
+    ## constructor
     def __init__(self):
         self.scraper = cfscrape.create_scraper()
-
     # End init
 
+    ## Scrapes the website and pulls the response from the server
     def getResponseFromServer(self, endpoint):
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
         return self.scraper.get(scrapeUrl)
     # End getResponseFromServer
 
+    ## Returns a list of all the anime currently on the site
     def all(self):
         response = self.getResponseFromServer(KissAnimeScrape.ANIME_LIST_ENDPOINT)
         videoLinks = self.getLinksFromListingObject(response)
@@ -32,6 +38,9 @@ class KissAnimeScrape:
         }
     # End all
 
+    ## Returns a list of all the episodes tied to the specified anime url passed in
+    #
+    #  @param episodesEndpoint string endpoint that points to the episode list
     def episodes(self, episodesEndpoint):
         response = self.getResponseFromServer(episodesEndpoint)
         videoLinks = self.getLinksFromListingObject(response)
@@ -42,11 +51,14 @@ class KissAnimeScrape:
         }
     # End episodes
 
-    def video(self, videoUrl):
-        response = self.getResponseFromServer(videoUrl)
+    ## Function to return a video url that the plugin will use to start playing
+    #  @param videoPageUrl url pointing to the webpage where the video link will be found
+    def video(self, videoPageUrl):
+        response = self.getResponseFromServer(videoPageUrl)
         return self.getVideoSrcUrl(response)
     # End video
 
+    ## Generates next and pervious page menu items if they are found on the webpage
     def addPageLinks(self, soup, links):
         prevLink = soup.find('a', text=re.compile('Prev'), attrs={'page':True})
         if prevLink is not None:
@@ -59,12 +71,23 @@ class KissAnimeScrape:
         return links
     # End addPageLinks
 
+    ## Traverses the dom tree, grabs the encrypted video url and decrypts it.
+    #  @param response       dom tree obj returned by the scraper that will be
+    #                       traversed to find the videoUrl
     def getVideoSrcUrl(self, response):
         soup = BeautifulSoup(response.content, 'html.parser')
         qualitySelector = soup.find('select', {"id": "selectQuality"})
-        return self.getDecryptedVideoLink(qualitySelector.option['value'])
+        videoUrl = self.getDecryptedVideoLink(qualitySelector.option['value'])
+        return {
+            'url': videoUrl
+        }
     # End getVideoSrcUrl
 
+    ## Traverses the table object for anime lists and episode lists to return
+    #  All of the links to various animes or episodes.
+    #
+    #  @param response      dom tree obj returned by the scraper that will be
+    #                       traversed to find the link
     def getLinksFromListingObject(self, response):
         soup = BeautifulSoup(response.content,'html.parser')
         listingObj = soup.find('table', { "class": "listing" })
@@ -83,6 +106,10 @@ class KissAnimeScrape:
         return videoLinks
     #End getLinksFromListingObject
 
+    ## Python interpretation of kiss anime's decryption algorithm from their
+    #  javascript. What will be used to decrypt their encoded video url
+    #
+    #  @param encrypted string encrypted string that will be decoded
     def getDecryptedVideoLink(self, encrypted):
         encryptedLength = len(encrypted)
         enc = [None] * 4
