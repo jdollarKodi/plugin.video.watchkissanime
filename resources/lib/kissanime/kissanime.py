@@ -29,15 +29,27 @@ class KissAnime:
         args = urlparse.parse_qs(sys.argv[2][1:])
 
         self.scraper = KissAnimeScrape()
-        self.typeParam = args.get('type', 'None')
-        self.urlParam = args.get('url', None)
+        self.typeParam = args.get('type', [None])
+        self.urlParam = args.get('url', [None])
+        self.filter = args.get('filter', [SORT_ALPHABETICALLY_ACTION])
+        print '<<<<<<<<<'
+        print args
+        print sys.argv
+        print BASE_APP_URL
+        print '>>>>>>>>>'
     # End init
 
     ## Router to generate menu items based on the type argument passed into
     # the plugin
     def run(self):
-        if self.typeParam[0] == ALL_VIDEOS_ACTION:
-            url = None if self.urlParam is None else self.urlParam[0]
+        self.route()
+    # End run
+
+    def route(self):
+        if self.typeParam[0] == FILTER_ALL_ACTION:
+            self.filterAll()
+        elif self.typeParam[0] == ALL_VIDEOS_ACTION:
+            url = self.urlParam[0]
             self.allVideoLinks(url)
         elif self.typeParam[0] == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
@@ -47,7 +59,6 @@ class KissAnime:
             self.search()
         else:
             self.buildMainMenu()
-    # End run
 
     ## Builds out the main menu for the starting point of the addon
     #
@@ -55,16 +66,16 @@ class KissAnime:
     # Items are defined in the constants file
     def buildMainMenu(self):
         for menuItemKey, menuItemValue in MAIN_MENU_ITEMS.items():
-            url = BASE_APP_URL + '?' + urllib.urlencode({'type': menuItemKey})
+            url = self.generateUrl(menuItemKey)
             li = xbmcgui.ListItem(menuItemValue, iconImage=DEFAULT_VIDEO_IMAGE)
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+        xbmcplugin.endOfDirectory(ADDON_HANDLE, updateListing=True)
 
     ## Builds out a menu for when the user specifies they want to view all
     #  available animes
-    def allVideoLinks(self, urlParam):
-        allReturn = self.scraper.all(urlParam)
+    def allVideoLinks(self, urlParam=None):
+        allReturn = self.scraper.all(urlParam, {'filter': self.filter[0]})
         videoLinks = allReturn['links']
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             urlAction = ALL_VIDEOS_ACTION if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
@@ -74,7 +85,18 @@ class KissAnime:
             li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+        xbmcplugin.endOfDirectory(ADDON_HANDLE, cacheToDisc=True)
+
+    def filterAll(self):
+        dialog = xbmcgui.Dialog()
+        selectorPosition = dialog.select('Select', ANIME_LIST_SELECTOR)
+        if selectorPosition >= 0:
+            #xbmcplugin.endOfDirectory(ADDON_HANDLE)
+            filter = ANIME_LIST_SELECTOR_MAP[ANIME_LIST_SELECTOR[selectorPosition]]
+            #filterUrl = self.generateUrl(ALL_VIDEOS_ACTION, filter=filter)
+            self.typeParam = [ALL_VIDEOS_ACTION]
+            self.filter = [filter]
+            self.route()
 
     ## Builds out a menu for when the user selects a anime to watch that will
     #  display all of the various episodes
@@ -86,13 +108,14 @@ class KissAnime:
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
             li = xbmcgui.ListItem(videoLinkObj['name'], iconImage='DefaultVideo.jpg')
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
+            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=False)
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
     def search(self):
         dialog = xbmcgui.Dialog()
-        keywordInput = dialog.input('Keyword', type=xbmcgui.INPUT_ALPHANUM)
+        keywordInput = dialog.input(SEARCH_LABEL, type=xbmcgui.INPUT_ALPHANUM)
+        print 'keyword: ' + keywordInput
         if keywordInput is None or keywordInput == '':
             return
 
@@ -126,6 +149,17 @@ class KissAnime:
     #                         to new menus
     #  @param url string     specifies the url that contains content that a new
     #                        menu will scrape information from
-    def generateUrl(self, urlType, url):
-        params = { 'type': urlType, 'url': url}
-        return BASE_APP_URL + '?' + urllib.urlencode(params)
+    def generateUrl(self, urlType, url=None, filter=None):
+        params = {}
+        params['type'] = urlType
+
+        if url:
+            params['url'] = url
+
+        if filter:
+            params['filter'] = filter
+
+        return self.generateUrlObj(params)
+
+    def generateUrlObj(self, data):
+        return BASE_APP_URL + '?' + urllib.urlencode(data)

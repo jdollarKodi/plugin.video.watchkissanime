@@ -2,6 +2,7 @@ import cfscrape
 import re
 import sys
 from constants import *
+from endpoints import *
 
 from bs4 import BeautifulSoup
 
@@ -13,7 +14,6 @@ class KissAnimeScrape:
     ## Base URL/Host where the scraper will be pulling data from
     BASE_URL = 'http://kissanime.ru/'
 
-    ## Endpoint where all of the anime is listed in a list format
     ANIME_LIST_ENDPOINT = 'AnimeList'
 
     ANIME_SEARCH_ENDPOINT = 'Search/Anime'
@@ -38,8 +38,12 @@ class KissAnimeScrape:
         return self.scraper.post(scrapeUrl, data=data)
 
     ## Returns a list of all the anime currently on the site
-    def all(self, urlParam):
-        url = KissAnimeScrape.ANIME_LIST_ENDPOINT if urlParam is None else urlParam
+    def all(self, urlParam, data=None):
+        url = urlParam if urlParam else KissAnimeScrape.ANIME_LIST_ENDPOINT
+
+        if data and data['filter'] and urlParam is None:
+            url = ANIME_LIST_FILTER_MAP[data['filter']]
+
         response = self.getResponseFromServer(url)
         self.setupSoup(response)
 
@@ -124,9 +128,10 @@ class KissAnimeScrape:
     def parseListingRows(self, links, parser):
         tableRows = self.getListingRows()
 
-        for tableRow in tableRows:
-            if tableRow.td is not None:
-                links = parser(tableRow, links)
+        if tableRows:
+            for tableRow in tableRows:
+                if tableRow.td is not None:
+                    links = parser(tableRow, links)
 
         return links
 
@@ -166,8 +171,12 @@ class KissAnimeScrape:
         }
 
     def getListingRows(self):
+        tableRows = None
         listingObj = self.soup.find('table', { "class": "listing" })
-        tableRows = listingObj.find_all('tr')
+
+        if listingObj:
+            tableRows = listingObj.find_all('tr')
+
         return tableRows
 
     def setupSoup(self, response):
