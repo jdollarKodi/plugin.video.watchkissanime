@@ -14,43 +14,61 @@ class KissAnimeScrape:
     ## Base URL/Host where the scraper will be pulling data from
     BASE_URL = 'http://kissanime.ru/'
 
-    ANIME_LIST_ENDPOINT = 'AnimeList'
-
-    ANIME_SEARCH_ENDPOINT = 'Search/Anime'
-
     ANIME_IMAGE_REGEX = re.compile('src=\"(.*?)\"')
     ANIME_DESC_REGEX = re.compile('<p>(.*?)<\/p>', re.DOTALL)
 
     NEXT_RESPONSE_TEXT = 'Next'
     PREV_RESPONSE_TEXT = 'Prev'
 
-    ## constructor
-    def __init__(self):
-        self.scraper = cfscrape.create_scraper()
+    @staticmethod
+    def scrape(data):
+        scrapeType = data['scrapeType']
+        scrapeData = {}
+
+        if scrapeType == ALL_SCRAPE_TYPE:
+            url = data['url']
+            passedInData = data['data']
+            scrapeData = KissAnimeScrape.all(url, passedInData)
+        elif scrapeType == EPISODE_SCRAPE_TYPE:
+            url = data['url']
+            scrapeData = KissAnimeScrape.episodes(url)
+        elif scrapeType == VIDEO_SCRAPE_TYPE:
+            url = data['url']
+            scrapeData = KissAnimeScrape.video(url)
+        elif scrapeType == SEARCH_SCRAPE_TYPE:
+            keyword = data['keyword']
+            scrapeData = KissAnimeScrape.search(keyword)
+
+        return scrapeData
 
     ## Scrapes the website and pulls the response from the server
-    def getResponseFromServer(self, endpoint):
+    @staticmethod
+    def getResponseFromServer(endpoint):
+        scraper = cfscrape.create_scraper()
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
-        return self.scraper.get(scrapeUrl)
+        return scraper.get(scrapeUrl)
 
-    def postResponseToServer(self, endpoint, data):
+    @staticmethod
+    def postResponseToServer(endpoint, data):
+        scraper = cfscrape.create_scraper()
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
-        return self.scraper.post(scrapeUrl, data=data)
+        return scraper.post(scrapeUrl, data=data)
 
     ## Returns a list of all the anime currently on the site
-    def all(self, urlParam, data=None):
-        url = urlParam if urlParam else KissAnimeScrape.ANIME_LIST_ENDPOINT
+    @staticmethod
+    def all(urlParam, data=None):
+        url = urlParam if urlParam else ANIME_LIST
 
         if data and data['filter'] and urlParam is None:
             url = ANIME_LIST_FILTER_MAP[data['filter']]
 
-        response = self.getResponseFromServer(url)
-        self.setupSoup(response)
+        response = KissAnimeScrape.getResponseFromServer(url)
+        soup = KissAnimeScrape.setupSoup(response)
 
         links = OrderedDict()
-        links = self.addPrevLink(links)
-        links = self.parseListingRows(links, self.allParser)
-        links = self.addNextLink(links)
+        links = KissAnimeScrape.addPrevLink(soup, links)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.allParser)
+        links = KissAnimeScrape.addNextLink(soup, links)
 
         return {
             'links': links,
@@ -60,16 +78,15 @@ class KissAnimeScrape:
     ## Returns a list of all the episodes tied to the specified anime url passed in
     #
     #  @param episodesEndpoint string endpoint that points to the episode list
-    def episodes(self, episodesEndpoint):
-        response = self.getResponseFromServer(episodesEndpoint)
-        self.setupSoup(response)
+    @staticmethod
+    def episodes(episodesEndpoint):
+        response = KissAnimeScrape.getResponseFromServer(episodesEndpoint)
+        soup = KissAnimeScrape.setupSoup(response)
 
         links = OrderedDict()
-        links = self.addPrevLink(links)
-        links = self.parseListingRows(links, self.episodesParser)
-        links = self.addNextLink(links)
-
-        #videoLinks = self.getLinksFromListingObject(response)
+        links = KissAnimeScrape.addPrevLink(soup, links)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.episodesParser)
+        links = KissAnimeScrape.addNextLink(soup, links)
 
         return {
             'links': links,
@@ -78,26 +95,28 @@ class KissAnimeScrape:
 
     ## Function to return a video url that the plugin will use to start playing
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
-    def video(self, videoPageUrl):
-        response = self.getResponseFromServer(videoPageUrl)
-        return self.getVideoSrcUrl(response)
+    @staticmethod
+    def video(videoPageUrl):
+        response = KissAnimeScrape.getResponseFromServer(videoPageUrl)
+        return KissAnimeScrape.getVideoSrcUrl(response)
 
-    def search(self, keyword):
+    @staticmethod
+    def search(keyword):
         data = { "keyword": keyword }
-        response = self.postResponseToServer(KissAnimeScrape.ANIME_SEARCH_ENDPOINT, data)
-        self.setupSoup(response)
-        print response.content
+        response = KissAnimeScrape.postResponseToServer(ANIME_SEARCH_ENDPOINT, data)
+        soup = KissAnimeScrape.setupSoup(response)
 
         links = OrderedDict()
-        links = self.addPrevLink(links)
-        links = self.parseListingRows(links, self.allParser)
-        links = self.addNextLink(links)
+        links = KissAnimeScrape.addPrevLink(soup, links)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.allParser)
+        links = KissAnimeScrape.addNextLink(soup, links)
         return {
             'links': links,
             'type': LIST_TYPE_DIR
         }
 
-    def allParser(self, tableRow, links):
+    @staticmethod
+    def allParser(tableRow, links):
         cell = tableRow.td
         image = ''
         description = ''
@@ -107,7 +126,7 @@ class KissAnimeScrape:
             description = re.search(KissAnimeScrape.ANIME_DESC_REGEX, cell['title']).group(1)
 
         anchor = cell.a
-        links[anchor['href']] = self.generateLinkObj(
+        links[anchor['href']] = KissAnimeScrape.generateLinkObj(
             anchor.string.strip(),
             image,
             description.strip()
@@ -115,9 +134,10 @@ class KissAnimeScrape:
 
         return links
 
-    def episodesParser(self, tableRow, links):
+    @staticmethod
+    def episodesParser(tableRow, links):
         anchor = tableRow.td.a
-        links[anchor['href']] = self.generateLinkObj(
+        links[anchor['href']] = KissAnimeScrape.generateLinkObj(
             anchor.string.strip(),
             '',
             ''
@@ -125,8 +145,9 @@ class KissAnimeScrape:
 
         return links
 
-    def parseListingRows(self, links, parser):
-        tableRows = self.getListingRows()
+    @staticmethod
+    def parseListingRows(soup, links, parser):
+        tableRows = KissAnimeScrape.getListingRows(soup)
 
         if tableRows:
             for tableRow in tableRows:
@@ -135,10 +156,11 @@ class KissAnimeScrape:
 
         return links
 
-    def addPrevLink(self, links):
-        prevLink = self.soup.find('a', text=re.compile(KissAnimeScrape.PREV_RESPONSE_TEXT), attrs={'page':True})
+    @staticmethod
+    def addPrevLink(soup, links):
+        prevLink = soup.find('a', text=re.compile(KissAnimeScrape.PREV_RESPONSE_TEXT), attrs={'page':True})
         if prevLink is not None:
-            links[prevLink['href']] = self.generateLinkObj(
+            links[prevLink['href']] = KissAnimeScrape.generateLinkObj(
                 PREV_LABEL,
                 DEFAULT_VIDEO_IMAGE,
                 PREV_LABEL,
@@ -147,10 +169,11 @@ class KissAnimeScrape:
 
         return links
 
-    def addNextLink(self, links):
-        nextLink = self.soup.find('a', text=re.compile(KissAnimeScrape.NEXT_RESPONSE_TEXT), attrs={'page':True})
+    @staticmethod
+    def addNextLink(soup, links):
+        nextLink = soup.find('a', text=re.compile(KissAnimeScrape.NEXT_RESPONSE_TEXT), attrs={'page':True})
         if nextLink is not None:
-            links[nextLink['href']] = self.generateLinkObj(
+            links[nextLink['href']] = KissAnimeScrape.generateLinkObj(
                 NEXT_LABEL,
                 DEFAULT_VIDEO_IMAGE,
                 NEXT_LABEL,
@@ -162,27 +185,31 @@ class KissAnimeScrape:
     ## Traverses the dom tree, grabs the encrypted video url and decrypts it.
     #  @param response       dom tree obj returned by the scraper that will be
     #                       traversed to find the videoUrl
-    def getVideoSrcUrl(self, response):
-        self.soup = BeautifulSoup(response.content, 'html.parser')
-        qualitySelector = self.soup.find('select', {"id": "selectQuality"})
-        videoUrl = self.getDecryptedVideoLink(qualitySelector.option['value'])
+    @staticmethod
+    def getVideoSrcUrl(response):
+        soup = BeautifulSoup(response.content, 'html.parser')
+        qualitySelector = soup.find('select', {"id": "selectQuality"})
+        videoUrl = KissAnimeScrape.getDecryptedVideoLink(qualitySelector.option['value'])
         return {
             'url': videoUrl
         }
 
-    def getListingRows(self):
+    @staticmethod
+    def getListingRows(soup):
         tableRows = None
-        listingObj = self.soup.find('table', { "class": "listing" })
+        listingObj = soup.find('table', { "class": "listing" })
 
         if listingObj:
             tableRows = listingObj.find_all('tr')
 
         return tableRows
 
-    def setupSoup(self, response):
-        self.soup = BeautifulSoup(response.content,'html.parser')
+    @staticmethod
+    def setupSoup(response):
+        return BeautifulSoup(response.content,'html.parser')
 
-    def generateLinkObj(self, name, image, description, itemType=ITEM_TYPE):
+    @staticmethod
+    def generateLinkObj(name, image, description, itemType=ITEM_TYPE):
         return {
             "name": name,
             "image": image,
@@ -194,7 +221,8 @@ class KissAnimeScrape:
     #  javascript. What will be used to decrypt their encoded video url
     #
     #  @param encrypted string encrypted string that will be decoded
-    def getDecryptedVideoLink(self, encrypted):
+    @staticmethod
+    def getDecryptedVideoLink(encrypted):
         encryptedLength = len(encrypted)
         enc = [None] * 4
 

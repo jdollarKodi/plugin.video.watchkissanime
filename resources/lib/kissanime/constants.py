@@ -4,8 +4,12 @@ from collections import OrderedDict
 BASE_APP_URL = sys.argv[0][:-1]
 DEFAULT_VIDEO_IMAGE = 'DefaultVideo.png'
 
-
 CONTENT_TYPE_MOVIES = 'movies'
+
+ALL_SCRAPE_TYPE = 'all'
+EPISODE_SCRAPE_TYPE = 'episode'
+VIDEO_SCRAPE_TYPE = 'video'
+SEARCH_SCRAPE_TYPE = 'search'
 
 LIST_TYPE_DIR = 'directory'
 ITEM_TYPE = 'item'

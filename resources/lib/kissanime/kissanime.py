@@ -28,7 +28,6 @@ class KissAnime:
         xbmcplugin.setContent(ADDON_HANDLE, CONTENT_TYPE_MOVIES)
         args = urlparse.parse_qs(sys.argv[2][1:])
 
-        self.scraper = KissAnimeScrape()
         self.typeParam = args.get('type', [None])
         self.urlParam = args.get('url', [None])
         self.filter = args.get('filter', [SORT_ALPHABETICALLY_ACTION])
@@ -63,12 +62,17 @@ class KissAnime:
             li = xbmcgui.ListItem(menuItemValue, iconImage=DEFAULT_VIDEO_IMAGE)
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(ADDON_HANDLE, updateListing=True)
+        xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
     ## Builds out a menu for when the user specifies they want to view all
     #  available animes
     def allVideoLinks(self, urlParam=None):
-        allReturn = self.scraper.all(urlParam, {'filter': self.filter[0]})
+        scrapeParams = {
+            'scrapeType': ALL_SCRAPE_TYPE,
+            'url': urlParam,
+            'data': {'filter': self.filter[0]}
+        }
+        allReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = allReturn['links']
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             urlAction = ALL_VIDEOS_ACTION if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
@@ -100,7 +104,8 @@ class KissAnime:
     #
     #  @param url string url of the webpage that contains a list of the episodes
     def episodeLinks(self, url):
-        episodeReturn = self.scraper.episodes(url)
+        scrapeParams = { 'scrapeType': EPISODE_SCRAPE_TYPE, 'url': url }
+        episodeReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = episodeReturn['links']
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
@@ -116,7 +121,8 @@ class KissAnime:
         if keywordInput is None or keywordInput == '':
             return
 
-        searchReturn = self.scraper.search(keywordInput)
+        scrapeParams = { 'scrapeType': SEARCH_SCRAPE_TYPE, 'keyword': keywordInput }
+        searchReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = searchReturn['links']
 
         for videoLinkUrl, videoLinkObj in videoLinks.items():
@@ -132,7 +138,8 @@ class KissAnime:
     #
     #  @param url string url of the video stream that kodi will start playing
     def playVideo(self, url):
-        videoObj = self.scraper.video(url)
+        scrapeParams = { 'scrapeType': VIDEO_SCRAPE_TYPE, 'url': url }
+        videoObj = KissAnimeScrape.scrape(scrapeParams)
         videoUrl = videoObj['url']
         videoListItem = xbmcgui.ListItem(path=videoUrl)
         xbmc.Player().play(videoUrl, videoListItem)
