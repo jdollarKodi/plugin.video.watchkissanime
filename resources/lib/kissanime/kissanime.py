@@ -32,18 +32,11 @@ class KissAnime:
         self.typeParam = args.get('type', [None])
         self.urlParam = args.get('url', [None])
         self.filter = args.get('filter', [SORT_ALPHABETICALLY_ACTION])
-        print '<<<<<<<<<'
-        print args
-        print sys.argv
-        print BASE_APP_URL
-        print '>>>>>>>>>'
-    # End init
 
     ## Router to generate menu items based on the type argument passed into
     # the plugin
     def run(self):
         self.route()
-    # End run
 
     def route(self):
         if self.typeParam[0] == FILTER_ALL_ACTION:
@@ -91,12 +84,16 @@ class KissAnime:
         dialog = xbmcgui.Dialog()
         selectorPosition = dialog.select('Select', ANIME_LIST_SELECTOR)
         if selectorPosition >= 0:
-            #xbmcplugin.endOfDirectory(ADDON_HANDLE)
-            filter = ANIME_LIST_SELECTOR_MAP[ANIME_LIST_SELECTOR[selectorPosition]]
-            #filterUrl = self.generateUrl(ALL_VIDEOS_ACTION, filter=filter)
-            self.typeParam = [ALL_VIDEOS_ACTION]
-            self.filter = [filter]
-            self.route()
+            allFilter = ANIME_LIST_SELECTOR_MAP[ANIME_LIST_SELECTOR[selectorPosition]]
+            self.filter = [allFilter]
+            # Really would like to do this, but can't. Container Update calls plugin twice.
+            # Prevents users from scrolling up a directory
+            #
+            # allVideosUrl = '{}/?type={}&filter={}'.format(BASE_APP_URL, ALL_VIDEOS_ACTION, allFilter)
+            # containerUpdateCommand = 'Container.Update({}, "{}")'.format(allVideosUrl, 'replace')
+            # xbmc.executebuiltin(containerUpdateCommand)
+
+        self.allVideoLinks()
 
     ## Builds out a menu for when the user selects a anime to watch that will
     #  display all of the various episodes
