@@ -59,7 +59,8 @@ class KissAnime:
     def buildMainMenu(self):
         for menuItemKey, menuItemValue in MAIN_MENU_ITEMS.items():
             url = self.generateUrl(menuItemKey)
-            li = xbmcgui.ListItem(menuItemValue, iconImage=DEFAULT_VIDEO_IMAGE)
+            li = xbmcgui.ListItem(menuItemValue)
+            li.setArt({ 'icon': DEFAULT_VIDEO_IMAGE })
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
@@ -109,7 +110,8 @@ class KissAnime:
         videoLinks = episodeReturn['links']
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
-            li = xbmcgui.ListItem(videoLinkObj['name'], iconImage='DefaultVideo.jpg')
+            li = xbmcgui.ListItem(videoLinkObj['name'])
+            li.setArt({ 'icon': DEFAULT_VIDEO_IMAGE })
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=False)
 
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
@@ -157,11 +159,8 @@ class KissAnime:
         params = {}
         params['type'] = urlType
 
-        if url:
-            params['url'] = url
-
-        if filter:
-            params['filter'] = filter
+        if url: params['url'] = url
+        if filter: params['filter'] = filter
 
         return self.generateUrlObj(params)
 
