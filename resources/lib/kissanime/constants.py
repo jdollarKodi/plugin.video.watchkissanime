@@ -10,6 +10,7 @@ ALL_SCRAPE_TYPE = 'all'
 EPISODE_SCRAPE_TYPE = 'episode'
 VIDEO_SCRAPE_TYPE = 'video'
 SEARCH_SCRAPE_TYPE = 'search'
+ONGOING_SCRAPE_TYPE = 'ongoing'
 
 LIST_TYPE_DIR = 'directory'
 ITEM_TYPE = 'item'
@@ -24,9 +25,11 @@ SORT_BY_POPULAR_LABEL = 'Sort by popularity'
 LATEST_UPDATE_LABEL = 'Latest update'
 NEW_ANIME_LABEL = 'New anime'
 UPCOMING_ANIME_LABEL = 'Upcoming anime'
+ONGOING_LABEL = 'Ongoing'
 
 PAGE_ACTION = 'page'
 FILTER_ALL_ACTION = 'filterAll'
+FILTER_ONGOING_ACTION = 'filterOngoing'
 ALL_VIDEOS_ACTION = 'allVideos'
 SEARCH_ACTION = 'search'
 EPISODES_ACTION = 'episode'
@@ -37,6 +40,7 @@ SORT_BY_POPULAR_ACTION = 'popularity'
 LATEST_UPDATE_ACTION = 'latestUpdate'
 NEW_ANIME_ACTION = 'newAnime'
 UPCOMING_ANIME_ACTION = 'upcomingAnime'
+ONGOING_ACTION = 'ongoing'
 
 ANIME_LIST_SELECTOR = [
     SORT_ALPHABETICALLY_LABEL,
@@ -57,6 +61,7 @@ ANIME_LIST_SELECTOR_MAP = {
 MAIN_MENU_ITEMS = OrderedDict(
     [
         (FILTER_ALL_ACTION, LIST_ALL_ANIME_LABEL),
+        (FILTER_ONGOING_ACTION, ONGOING_LABEL),
         (SEARCH_ACTION, SEARCH_LABEL)
     ]
 )

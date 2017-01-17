@@ -29,6 +29,10 @@ class KissAnimeScrape:
             url = data['url']
             passedInData = data['data']
             scrapeData = KissAnimeScrape.all(url, passedInData)
+        elif scrapeType == ONGOING_SCRAPE_TYPE:
+            url = data['url']
+            passedInData = data['data']
+            scrapeData = KissAnimeScrape.ongoing(url, passedInData)
         elif scrapeType == EPISODE_SCRAPE_TYPE:
             url = data['url']
             scrapeData = KissAnimeScrape.episodes(url)
@@ -75,6 +79,26 @@ class KissAnimeScrape:
             'type': LIST_TYPE_DIR
         }
 
+    @staticmethod
+    def ongoing(urlParam, data=None):
+        url = urlParam if urlParam else ANIME_LIST
+
+        if data and data['filter'] and urlParam is None:
+            url = ONGOING_FILTER_MAP[data['filter']]
+
+        response = KissAnimeScrape.getResponseFromServer(url)
+        soup = KissAnimeScrape.setupSoup(response)
+
+        links = OrderedDict()
+        links = KissAnimeScrape.addPrevLink(soup, links)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.ongoingParser)
+        links = KissAnimeScrape.addNextLink(soup, links)
+
+        return {
+            'links': links,
+            'type': LIST_TYPE_DIR
+        }
+
     ## Returns a list of all the episodes tied to the specified anime url passed in
     #
     #  @param episodesEndpoint string endpoint that points to the episode list
@@ -108,7 +132,7 @@ class KissAnimeScrape:
 
         links = OrderedDict()
         links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.allParser)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.searchParser)
         links = KissAnimeScrape.addNextLink(soup, links)
         return {
             'links': links,
@@ -117,6 +141,18 @@ class KissAnimeScrape:
 
     @staticmethod
     def allParser(tableRow, links):
+        return KissAnimeScrape.commonParser(tableRow, links)
+
+    @staticmethod
+    def ongoingParser(tableRow, links):
+        return KissAnimeScrape.commonParser(tableRow, links)
+
+    @staticmethod
+    def searchParser(tableRow, links):
+        return KissAnimeScrape.commonParser(tableRow, links)
+
+    @staticmethod
+    def commonParser(tableRow, links):
         cell = tableRow.td
         image = ''
         description = ''

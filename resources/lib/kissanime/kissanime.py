@@ -40,6 +40,8 @@ class KissAnime:
     def route(self):
         if self.typeParam[0] == FILTER_ALL_ACTION:
             self.filterAll()
+        elif self.typeParam[0] == FILTER_ONGOING_ACTION:
+            self.filterOngoing()
         elif self.typeParam[0] == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
             self.allVideoLinks(url)
@@ -47,6 +49,8 @@ class KissAnime:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
             self.playVideo(self.urlParam[0])
+        elif self.typeParam[0] == ONGOING_ACTION:
+            self.ongoing(self.urlParam[0])
         elif self.typeParam[0] == SEARCH_ACTION:
             self.search()
         else:
@@ -75,8 +79,21 @@ class KissAnime:
         }
         allReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = allReturn['links']
+        self.buildListOfAnimeShows(videoLinks, ALL_VIDEOS_ACTION)
+
+    def ongoing(self, urlParam=None):
+        scrapeParams = {
+            'scrapeType': ONGOING_SCRAPE_TYPE,
+            'url': urlParam,
+            'data': {'filter': self.filter[0]}
+        }
+        ongoingReturn = KissAnimeScrape.scrape(scrapeParams)
+        videoLinks = ongoingReturn['links']
+        self.buildListOfAnimeShows(videoLinks, ONGOING_ACTION)
+
+    def buildListOfAnimeShows(self, videoLinks, defaultAction):
         for videoLinkUrl, videoLinkObj in videoLinks.items():
-            urlAction = ALL_VIDEOS_ACTION if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
+            urlAction = defaultAction if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
             url = self.generateUrl(urlAction, videoLinkUrl)
             li = xbmcgui.ListItem(videoLinkObj['name'])
             li.setArt({'icon': videoLinkObj['image']})
@@ -86,11 +103,20 @@ class KissAnime:
         xbmcplugin.endOfDirectory(ADDON_HANDLE, cacheToDisc=True)
 
     def filterAll(self):
+        filterChoice = self.getUserFilterChoice()
+        if filterChoice: self.allVideoLinks()
+
+    def filterOngoing(self):
+        filterChoice = self.getUserFilterChoice()
+        if filterChoice: self.ongoing()
+
+    def getUserFilterChoice(self):
         dialog = xbmcgui.Dialog()
         selectorPosition = dialog.select('Select', ANIME_LIST_SELECTOR)
+        filterChoice = None
         if selectorPosition >= 0:
-            allFilter = ANIME_LIST_SELECTOR_MAP[ANIME_LIST_SELECTOR[selectorPosition]]
-            self.filter = [allFilter]
+            filterChoice = ANIME_LIST_SELECTOR_MAP[ANIME_LIST_SELECTOR[selectorPosition]]
+            self.filter = [filterChoice]
             # Really would like to do this, but can't. Container Update calls plugin twice.
             # Prevents users from scrolling up a directory
             #
@@ -98,7 +124,7 @@ class KissAnime:
             # containerUpdateCommand = 'Container.Update({}, "{}")'.format(allVideosUrl, 'replace')
             # xbmc.executebuiltin(containerUpdateCommand)
 
-        self.allVideoLinks()
+        return filterChoice
 
     ## Builds out a menu for when the user selects a anime to watch that will
     #  display all of the various episodes
