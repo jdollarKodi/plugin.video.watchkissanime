@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.kissanimedev" name="Kiss Anime Dev" version="0.1.1" provider-name="jdollar">
+<addon id="plugin.video.watchkissanime" name="Watch Kiss Anime" version="0.2.0" provider-name="jdollar">
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
         <import addon="xbmc.gui" version="5.12.0"/>
