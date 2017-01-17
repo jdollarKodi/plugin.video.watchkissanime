@@ -42,6 +42,8 @@ class KissAnime:
             self.filterAll()
         elif self.typeParam[0] == FILTER_ONGOING_ACTION:
             self.filterOngoing()
+        elif self.typeParam[0] == FILTER_COMPLETED_ACTION:
+            self.filterCompleted()
         elif self.typeParam[0] == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
             self.allVideoLinks(url)
@@ -51,6 +53,8 @@ class KissAnime:
             self.playVideo(self.urlParam[0])
         elif self.typeParam[0] == ONGOING_ACTION:
             self.ongoing(self.urlParam[0])
+        elif self.typeParam[0] == COMPLETED_ACTION:
+            self.completed(self.urlParam[0])
         elif self.typeParam[0] == SEARCH_ACTION:
             self.search()
         else:
@@ -91,6 +95,16 @@ class KissAnime:
         videoLinks = ongoingReturn['links']
         self.buildListOfAnimeShows(videoLinks, ONGOING_ACTION)
 
+    def completed(self, urlParam=None):
+        scrapeParams = {
+            'scrapeType': COMPLETED_SCRAPE_TYPE,
+            'url': urlParam,
+            'data': {'filter': self.filter[0]}
+        }
+        ongoingReturn = KissAnimeScrape.scrape(scrapeParams)
+        videoLinks = ongoingReturn['links']
+        self.buildListOfAnimeShows(videoLinks, COMPLETED_ACTION)
+
     def buildListOfAnimeShows(self, videoLinks, defaultAction):
         for videoLinkUrl, videoLinkObj in videoLinks.items():
             urlAction = defaultAction if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
@@ -109,6 +123,10 @@ class KissAnime:
     def filterOngoing(self):
         filterChoice = self.getUserFilterChoice()
         if filterChoice: self.ongoing()
+
+    def filterCompleted(self):
+        filterChoice = self.getUserFilterChoice()
+        if filterChoice: self.completed()
 
     def getUserFilterChoice(self):
         dialog = xbmcgui.Dialog()

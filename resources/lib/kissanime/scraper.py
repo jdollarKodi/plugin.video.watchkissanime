@@ -33,6 +33,10 @@ class KissAnimeScrape:
             url = data['url']
             passedInData = data['data']
             scrapeData = KissAnimeScrape.ongoing(url, passedInData)
+        elif scrapeType == COMPLETED_SCRAPE_TYPE:
+            url = data['url']
+            passedInData = data['data']
+            scrapeData = KissAnimeScrape.completed(url, passedInData)
         elif scrapeType == EPISODE_SCRAPE_TYPE:
             url = data['url']
             scrapeData = KissAnimeScrape.episodes(url)
@@ -81,10 +85,30 @@ class KissAnimeScrape:
 
     @staticmethod
     def ongoing(urlParam, data=None):
-        url = urlParam if urlParam else ANIME_LIST
+        url = urlParam if urlParam else ONGOING
 
         if data and data['filter'] and urlParam is None:
             url = ONGOING_FILTER_MAP[data['filter']]
+
+        response = KissAnimeScrape.getResponseFromServer(url)
+        soup = KissAnimeScrape.setupSoup(response)
+
+        links = OrderedDict()
+        links = KissAnimeScrape.addPrevLink(soup, links)
+        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.ongoingParser)
+        links = KissAnimeScrape.addNextLink(soup, links)
+
+        return {
+            'links': links,
+            'type': LIST_TYPE_DIR
+        }
+
+    @staticmethod
+    def completed(urlParam, data=None):
+        url = urlParam if urlParam else COMPLETED
+
+        if data and data['filter'] and urlParam is None:
+            url = COMPLETED_FILTER_MAP[data['filter']]
 
         response = KissAnimeScrape.getResponseFromServer(url)
         soup = KissAnimeScrape.setupSoup(response)
