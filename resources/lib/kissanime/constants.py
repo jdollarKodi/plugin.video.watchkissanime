@@ -18,6 +18,7 @@ VIDEO_SCRAPE_TYPE = 'video'
 SEARCH_SCRAPE_TYPE = 'search'
 ONGOING_SCRAPE_TYPE = 'ongoing'
 COMPLETED_SCRAPE_TYPE = 'completed'
+NEW_AND_HOT_SCRAPE_TYPE = 'newandhot'
 
 LIST_TYPE_DIR = 'directory'
 ITEM_TYPE = 'item'
@@ -34,6 +35,7 @@ NEW_ANIME_LABEL = 'New anime'
 UPCOMING_ANIME_LABEL = 'Upcoming anime'
 ONGOING_LABEL = 'Ongoing'
 COMPLETED_LABEL = 'Completed'
+NEW_AND_HOT_LABEL = 'New and Hot'
 
 PAGE_ACTION = 'page'
 FILTER_ALL_ACTION = 'filterAll'
@@ -46,6 +48,7 @@ VIDEO_ACTION = 'video'
 UPCOMING_ANIME_ACTION = 'upcomingAnime'
 ONGOING_ACTION = 'ongoing'
 COMPLETED_ACTION = 'completed'
+NEW_AND_HOT_ACTION = 'newandhot'
 
 SORT_ALPHABETICALLY_ACTION = 'alphabetically'
 SORT_BY_POPULAR_ACTION = 'popularity'
@@ -74,6 +77,7 @@ MAIN_MENU_ITEMS = OrderedDict(
         (FILTER_ALL_ACTION, LIST_ALL_ANIME_LABEL),
         (FILTER_ONGOING_ACTION, ONGOING_LABEL),
         (FILTER_COMPLETED_ACTION, COMPLETED_LABEL),
+        (NEW_AND_HOT_ACTION, NEW_AND_HOT_LABEL),
         (SEARCH_ACTION, SEARCH_LABEL)
     ]
 )

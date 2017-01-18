@@ -51,10 +51,8 @@ class KissAnime:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
             self.playVideo(self.urlParam[0])
-        elif self.typeParam[0] == ONGOING_ACTION:
-            self.ongoing(self.urlParam[0])
-        elif self.typeParam[0] == COMPLETED_ACTION:
-            self.completed(self.urlParam[0])
+        elif self.typeParam[0] == NEW_AND_HOT_ACTION:
+            self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
         elif self.typeParam[0] == SEARCH_ACTION:
             self.search()
         else:

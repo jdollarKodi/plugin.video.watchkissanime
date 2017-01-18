@@ -46,6 +46,13 @@ class KissAnimeScrape:
                 KissAnimeScrape.commonParser,
                 data
             )
+        elif scrapeType == NEW_AND_HOT_SCRAPE_TYPE:
+            scrapeData = KissAnimeScrape.animeList(
+                ANIME_LIST_NEW_AND_HOT,
+                None,
+                KissAnimeScrape.commonParser,
+                data
+            )
         elif scrapeType == EPISODE_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.episodes(data['url'])
         elif scrapeType == VIDEO_SCRAPE_TYPE:
@@ -73,7 +80,7 @@ class KissAnimeScrape:
         url = data['url'] if data['url'] else defaultUrl
         data = data['data']
 
-        if data and data['filter'] and url is None:
+        if data and data['filter'] and filterMap and url is None:
             url = filterMap[data['filter']]
 
         response = KissAnimeScrape.getResponseFromServer(url)
