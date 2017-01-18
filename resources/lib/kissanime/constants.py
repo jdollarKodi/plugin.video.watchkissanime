@@ -1,10 +1,15 @@
 import sys
+import xbmc
+import xbmcaddon
 from collections import OrderedDict
 
 ADDON_HANDLE = int(sys.argv[1])
 BASE_APP_URL = sys.argv[0][:-1]
-DEFAULT_VIDEO_IMAGE = 'DefaultVideo.png'
 
+ADDON = xbmcaddon.Addon()
+LAST_SEARCH_FILE = xbmc.translatePath( 'special://temp/' + ADDON.getAddonInfo('id') + '.lastSearch' ).decode("utf-8")
+
+DEFAULT_VIDEO_IMAGE = 'DefaultVideo.png'
 CONTENT_TYPE_MOVIES = 'movies'
 
 ALL_SCRAPE_TYPE = 'all'

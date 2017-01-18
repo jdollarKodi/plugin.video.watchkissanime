@@ -4,6 +4,7 @@ import urllib
 import xbmc
 import xbmcplugin
 import xbmcgui
+import xbmcvfs
 
 from scraper import KissAnimeScrape
 from guiutil import GuiUtil
@@ -38,14 +39,14 @@ class KissAnime:
 
     def route(self):
         if self.typeParam[0] == FILTER_ALL_ACTION:
-            self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
+            self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
         elif self.typeParam[0] == FILTER_ONGOING_ACTION:
-            self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
+            self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
         elif self.typeParam[0] == FILTER_COMPLETED_ACTION:
-            self.filterSort(COMPLETED_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
+            self.filterSort(COMPLETED_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
         elif self.typeParam[0] == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
-            self.animeListScrape(url, ALL_SCRAPE_TYPE, EPISODES_ACTION)
+            self.animeListScrape(url, ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
         elif self.typeParam[0] == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
@@ -57,16 +58,17 @@ class KissAnime:
         elif self.typeParam[0] == SEARCH_ACTION:
             self.search()
         else:
-            self.buildMainMenu()
+            self.cleanCacheFile(LAST_SEARCH_FILE)
+            self.mainMenu()
 
     ## Builds out the main menu for the starting point of the addon
     #
     # Generates menu items for the main menu of the application. Menu
     # Items are defined in the constants file
-    def buildMainMenu(self):
+    def mainMenu(self):
         GuiUtil.mainMenu(MAIN_MENU_ITEMS)
 
-    def animeListScrape(self, urlParam=None, scrapeType=ALL_SCRAPE_TYPE, action=EPISODES_ACTION):
+    def animeListScrape(self, urlParam=None, scrapeType=ALL_SCRAPE_TYPE, action=EPISODES_ACTION, pageAction=ALL_VIDEOS_ACTION):
         scrapeParams = {
             'scrapeType': scrapeType,
             'url': urlParam,
@@ -74,11 +76,17 @@ class KissAnime:
         }
         scrapeResults = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = scrapeResults['links']
-        GuiUtil.list(videoLinks, action)
+        GuiUtil.list(videoLinks, action, pageAction)
 
-    def filterSort(self, scrapeType, action, callback):
-        filterChoice = self.getUserFilterChoice()
-        if filterChoice: callback(scrapeType=scrapeType, action=action)
+    def filterSort(self, scrapeType, action, pageAction, callback):
+        filterChoice = None
+        if not xbmcvfs.exists(LAST_SEARCH_FILE):
+            filterChoice = self.getUserFilterChoice()
+            if filterChoice: self.setCacheValue(LAST_SEARCH_FILE, filterChoice)
+        else:
+            filterChoice = self.getCacheValue(LAST_SEARCH_FILE)
+
+        if filterChoice: callback(scrapeType=scrapeType, action=action, pageAction=pageAction)
 
     def getUserFilterChoice(self):
         dialog = xbmcgui.Dialog()
@@ -104,19 +112,21 @@ class KissAnime:
         scrapeParams = { 'scrapeType': EPISODE_SCRAPE_TYPE, 'url': url }
         episodeReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = episodeReturn['links']
-        GuiUtil.list(videoLinks, VIDEO_ACTION, False)
+        GuiUtil.list(videoLinks, VIDEO_ACTION, EPISODES_ACTION, False)
 
     def search(self):
-        dialog = xbmcgui.Dialog()
-        keywordInput = dialog.input(SEARCH_LABEL, type=xbmcgui.INPUT_ALPHANUM)
-        print 'keyword: ' + keywordInput
-        if keywordInput is None or keywordInput == '':
-            return
+        if not xbmcvfs.exists(LAST_SEARCH_FILE):
+            dialog = xbmcgui.Dialog()
+            keywordInput = dialog.input(SEARCH_LABEL, type=xbmcgui.INPUT_ALPHANUM)
+            if keywordInput: self.setCacheValue(LAST_SEARCH_FILE, keywordInput)
+        else:
+            keywordInput = self.getCacheValue(LAST_SEARCH_FILE)
 
-        scrapeParams = { 'scrapeType': SEARCH_SCRAPE_TYPE, 'keyword': keywordInput }
-        searchReturn = KissAnimeScrape.scrape(scrapeParams)
-        videoLinks = searchReturn['links']
-        GuiUtil.list(videoLinks, EPISODES_ACTION)
+        if keywordInput:
+            scrapeParams = { 'scrapeType': SEARCH_SCRAPE_TYPE, 'keyword': keywordInput }
+            searchReturn = KissAnimeScrape.scrape(scrapeParams)
+            videoLinks = searchReturn['links']
+            GuiUtil.list(videoLinks, EPISODES_ACTION, ALL_VIDEOS_ACTION)
 
     ## Plays the video url passed into this function
     #
@@ -127,3 +137,16 @@ class KissAnime:
         videoUrl = videoObj['url']
         videoListItem = xbmcgui.ListItem(path=videoUrl)
         xbmc.Player().play(videoUrl, videoListItem)
+
+    def getCacheValue(self, filename):
+        cacheFile = xbmcvfs.File(filename)
+        return cacheFile.read()
+
+    def setCacheValue(self, filename, value):
+        cacheFile = xbmcvfs.File(filename, 'w')
+        cacheFile.write(value)
+        cacheFile.close()
+
+    def cleanCacheFile(self, filename):
+        if xbmcvfs.exists(filename):
+            xbmcvfs.delete(filename)

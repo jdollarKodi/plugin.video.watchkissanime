@@ -16,16 +16,17 @@ class GuiUtil:
         xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
-    def list(dataMap, urlAction=None, isFolder=True):
+    def list(dataMap, urlAction, pageAction, isFolder=True):
         for urlKey, obj in dataMap.items():
-            url = GuiUtil.generateUrl(urlAction, urlKey)
+            action = pageAction if obj and obj['type'] == PAGE_TYPE else urlAction
+            url = GuiUtil.generateUrl(action, urlKey)
             name = obj['name'] if obj['name'] else ''
             image = obj['image'] if obj['image'] else DEFAULT_VIDEO_IMAGE
             description = obj['description'] if obj['description'] else None
             li = GuiUtil.generateListItem(url, name, image, description)
             xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=isFolder)
 
-        xbmcplugin.endOfDirectory(ADDON_HANDLE, cacheToDisc=True)
+        xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
     def generateListItem(url, name, image=DEFAULT_VIDEO_IMAGE, description=None):
