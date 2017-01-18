@@ -26,26 +26,32 @@ class KissAnimeScrape:
         scrapeData = {}
 
         if scrapeType == ALL_SCRAPE_TYPE:
-            url = data['url']
-            passedInData = data['data']
-            scrapeData = KissAnimeScrape.all(url, passedInData)
+            scrapeData = KissAnimeScrape.animeList(
+                ANIME_LIST,
+                ANIME_LIST_FILTER_MAP,
+                KissAnimeScrape.commonParser,
+                data
+            )
         elif scrapeType == ONGOING_SCRAPE_TYPE:
-            url = data['url']
-            passedInData = data['data']
-            scrapeData = KissAnimeScrape.ongoing(url, passedInData)
+            scrapeData = KissAnimeScrape.animeList(
+                ONGOING,
+                ONGOING_FILTER_MAP,
+                KissAnimeScrape.commonParser,
+                data
+            )
         elif scrapeType == COMPLETED_SCRAPE_TYPE:
-            url = data['url']
-            passedInData = data['data']
-            scrapeData = KissAnimeScrape.completed(url, passedInData)
+            scrapeData = KissAnimeScrape.animeList(
+                COMPLETED,
+                COMPLETED_FILTER_MAP,
+                KissAnimeScrape.commonParser,
+                data
+            )
         elif scrapeType == EPISODE_SCRAPE_TYPE:
-            url = data['url']
-            scrapeData = KissAnimeScrape.episodes(url)
+            scrapeData = KissAnimeScrape.episodes(data['url'])
         elif scrapeType == VIDEO_SCRAPE_TYPE:
-            url = data['url']
-            scrapeData = KissAnimeScrape.video(url)
+            scrapeData = KissAnimeScrape.video(data['url'])
         elif scrapeType == SEARCH_SCRAPE_TYPE:
-            keyword = data['keyword']
-            scrapeData = KissAnimeScrape.search(keyword)
+            scrapeData = KissAnimeScrape.search(data['keyword'])
 
         return scrapeData
 
@@ -62,60 +68,24 @@ class KissAnimeScrape:
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
         return scraper.post(scrapeUrl, data=data)
 
-    ## Returns a list of all the anime currently on the site
     @staticmethod
-    def all(urlParam, data=None):
-        url = urlParam if urlParam else ANIME_LIST
+    def animeList(defaultUrl, filterMap, parser, data=None):
+        url = data['url'] if data['url'] else defaultUrl
+        data = data['data']
 
-        if data and data['filter'] and urlParam is None:
-            url = ANIME_LIST_FILTER_MAP[data['filter']]
+        if data and data['filter'] and url is None:
+            url = filterMap[data['filter']]
 
         response = KissAnimeScrape.getResponseFromServer(url)
-        soup = KissAnimeScrape.setupSoup(response)
+        return KissAnimeScrape.parseIntoListType(response, parser)
+
+    @staticmethod
+    def parseIntoListType(response, parser):
+        soup = BeautifulSoup(response.content,'html.parser')
 
         links = OrderedDict()
         links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.allParser)
-        links = KissAnimeScrape.addNextLink(soup, links)
-
-        return {
-            'links': links,
-            'type': LIST_TYPE_DIR
-        }
-
-    @staticmethod
-    def ongoing(urlParam, data=None):
-        url = urlParam if urlParam else ONGOING
-
-        if data and data['filter'] and urlParam is None:
-            url = ONGOING_FILTER_MAP[data['filter']]
-
-        response = KissAnimeScrape.getResponseFromServer(url)
-        soup = KissAnimeScrape.setupSoup(response)
-
-        links = OrderedDict()
-        links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.ongoingParser)
-        links = KissAnimeScrape.addNextLink(soup, links)
-
-        return {
-            'links': links,
-            'type': LIST_TYPE_DIR
-        }
-
-    @staticmethod
-    def completed(urlParam, data=None):
-        url = urlParam if urlParam else COMPLETED
-
-        if data and data['filter'] and urlParam is None:
-            url = COMPLETED_FILTER_MAP[data['filter']]
-
-        response = KissAnimeScrape.getResponseFromServer(url)
-        soup = KissAnimeScrape.setupSoup(response)
-
-        links = OrderedDict()
-        links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.ongoingParser)
+        links = KissAnimeScrape.parseListingRows(soup, links, parser)
         links = KissAnimeScrape.addNextLink(soup, links)
 
         return {
@@ -129,17 +99,7 @@ class KissAnimeScrape:
     @staticmethod
     def episodes(episodesEndpoint):
         response = KissAnimeScrape.getResponseFromServer(episodesEndpoint)
-        soup = KissAnimeScrape.setupSoup(response)
-
-        links = OrderedDict()
-        links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.episodesParser)
-        links = KissAnimeScrape.addNextLink(soup, links)
-
-        return {
-            'links': links,
-            'type': LIST_TYPE_DIR
-        }
+        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.episodesParser)
 
     ## Function to return a video url that the plugin will use to start playing
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
@@ -152,28 +112,7 @@ class KissAnimeScrape:
     def search(keyword):
         data = { "keyword": keyword }
         response = KissAnimeScrape.postResponseToServer(ANIME_SEARCH_ENDPOINT, data)
-        soup = KissAnimeScrape.setupSoup(response)
-
-        links = OrderedDict()
-        links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, KissAnimeScrape.searchParser)
-        links = KissAnimeScrape.addNextLink(soup, links)
-        return {
-            'links': links,
-            'type': LIST_TYPE_DIR
-        }
-
-    @staticmethod
-    def allParser(tableRow, links):
-        return KissAnimeScrape.commonParser(tableRow, links)
-
-    @staticmethod
-    def ongoingParser(tableRow, links):
-        return KissAnimeScrape.commonParser(tableRow, links)
-
-    @staticmethod
-    def searchParser(tableRow, links):
-        return KissAnimeScrape.commonParser(tableRow, links)
+        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.commonParser)
 
     @staticmethod
     def commonParser(tableRow, links):
@@ -242,18 +181,6 @@ class KissAnimeScrape:
 
         return links
 
-    ## Traverses the dom tree, grabs the encrypted video url and decrypts it.
-    #  @param response       dom tree obj returned by the scraper that will be
-    #                       traversed to find the videoUrl
-    @staticmethod
-    def getVideoSrcUrl(response):
-        soup = BeautifulSoup(response.content, 'html.parser')
-        qualitySelector = soup.find('select', {"id": "selectQuality"})
-        videoUrl = KissAnimeScrape.getDecryptedVideoLink(qualitySelector.option['value'])
-        return {
-            'url': videoUrl
-        }
-
     @staticmethod
     def getListingRows(soup):
         tableRows = None
@@ -265,10 +192,6 @@ class KissAnimeScrape:
         return tableRows
 
     @staticmethod
-    def setupSoup(response):
-        return BeautifulSoup(response.content,'html.parser')
-
-    @staticmethod
     def generateLinkObj(name, image, description, itemType=ITEM_TYPE):
         return {
             "name": name,
@@ -277,10 +200,15 @@ class KissAnimeScrape:
             "type": itemType
         }
 
-    ## Python interpretation of kiss anime's decryption algorithm from their
-    #  javascript. What will be used to decrypt their encoded video url
-    #
-    #  @param encrypted string encrypted string that will be decoded
+    @staticmethod
+    def getVideoSrcUrl(response):
+        soup = BeautifulSoup(response.content, 'html.parser')
+        qualitySelector = soup.find('select', {"id": "selectQuality"})
+        videoUrl = KissAnimeScrape.getDecryptedVideoLink(qualitySelector.option['value'])
+        return {
+            'url': videoUrl
+        }
+
     @staticmethod
     def getDecryptedVideoLink(encrypted):
         encryptedLength = len(encrypted)

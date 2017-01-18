@@ -1,6 +1,7 @@
 import sys
 from collections import OrderedDict
 
+ADDON_HANDLE = int(sys.argv[1])
 BASE_APP_URL = sys.argv[0][:-1]
 DEFAULT_VIDEO_IMAGE = 'DefaultVideo.png'
 

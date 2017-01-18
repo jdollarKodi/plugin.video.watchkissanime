@@ -6,11 +6,10 @@ import xbmcplugin
 import xbmcgui
 
 from scraper import KissAnimeScrape
+from guiutil import GuiUtil
 import cfscrape
 from bs4 import BeautifulSoup
 from constants import *
-
-ADDON_HANDLE = int(sys.argv[1])
 
 ## Main class for the plugin.
 #
@@ -39,14 +38,14 @@ class KissAnime:
 
     def route(self):
         if self.typeParam[0] == FILTER_ALL_ACTION:
-            self.filterAll()
+            self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
         elif self.typeParam[0] == FILTER_ONGOING_ACTION:
-            self.filterOngoing()
+            self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
         elif self.typeParam[0] == FILTER_COMPLETED_ACTION:
-            self.filterCompleted()
+            self.filterSort(COMPLETED_SCRAPE_TYPE, EPISODES_ACTION, self.animeListScrape)
         elif self.typeParam[0] == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
-            self.allVideoLinks(url)
+            self.animeListScrape(url, ALL_SCRAPE_TYPE, EPISODES_ACTION)
         elif self.typeParam[0] == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
         elif self.typeParam[0] == VIDEO_ACTION:
@@ -65,68 +64,21 @@ class KissAnime:
     # Generates menu items for the main menu of the application. Menu
     # Items are defined in the constants file
     def buildMainMenu(self):
-        for menuItemKey, menuItemValue in MAIN_MENU_ITEMS.items():
-            url = self.generateUrl(menuItemKey)
-            li = xbmcgui.ListItem(menuItemValue)
-            li.setArt({ 'icon': DEFAULT_VIDEO_IMAGE })
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
+        GuiUtil.mainMenu(MAIN_MENU_ITEMS)
 
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
-
-    ## Builds out a menu for when the user specifies they want to view all
-    #  available animes
-    def allVideoLinks(self, urlParam=None):
+    def animeListScrape(self, urlParam=None, scrapeType=ALL_SCRAPE_TYPE, action=EPISODES_ACTION):
         scrapeParams = {
-            'scrapeType': ALL_SCRAPE_TYPE,
+            'scrapeType': scrapeType,
             'url': urlParam,
             'data': {'filter': self.filter[0]}
         }
-        allReturn = KissAnimeScrape.scrape(scrapeParams)
-        videoLinks = allReturn['links']
-        self.buildListOfAnimeShows(videoLinks, ALL_VIDEOS_ACTION)
+        scrapeResults = KissAnimeScrape.scrape(scrapeParams)
+        videoLinks = scrapeResults['links']
+        GuiUtil.list(videoLinks, action)
 
-    def ongoing(self, urlParam=None):
-        scrapeParams = {
-            'scrapeType': ONGOING_SCRAPE_TYPE,
-            'url': urlParam,
-            'data': {'filter': self.filter[0]}
-        }
-        ongoingReturn = KissAnimeScrape.scrape(scrapeParams)
-        videoLinks = ongoingReturn['links']
-        self.buildListOfAnimeShows(videoLinks, ONGOING_ACTION)
-
-    def completed(self, urlParam=None):
-        scrapeParams = {
-            'scrapeType': COMPLETED_SCRAPE_TYPE,
-            'url': urlParam,
-            'data': {'filter': self.filter[0]}
-        }
-        ongoingReturn = KissAnimeScrape.scrape(scrapeParams)
-        videoLinks = ongoingReturn['links']
-        self.buildListOfAnimeShows(videoLinks, COMPLETED_ACTION)
-
-    def buildListOfAnimeShows(self, videoLinks, defaultAction):
-        for videoLinkUrl, videoLinkObj in videoLinks.items():
-            urlAction = defaultAction if videoLinkObj['type'] != ITEM_TYPE else EPISODES_ACTION
-            url = self.generateUrl(urlAction, videoLinkUrl)
-            li = xbmcgui.ListItem(videoLinkObj['name'])
-            li.setArt({'icon': videoLinkObj['image']})
-            li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
-
-        xbmcplugin.endOfDirectory(ADDON_HANDLE, cacheToDisc=True)
-
-    def filterAll(self):
+    def filterSort(self, scrapeType, action, callback):
         filterChoice = self.getUserFilterChoice()
-        if filterChoice: self.allVideoLinks()
-
-    def filterOngoing(self):
-        filterChoice = self.getUserFilterChoice()
-        if filterChoice: self.ongoing()
-
-    def filterCompleted(self):
-        filterChoice = self.getUserFilterChoice()
-        if filterChoice: self.completed()
+        if filterChoice: callback(scrapeType=scrapeType, action=action)
 
     def getUserFilterChoice(self):
         dialog = xbmcgui.Dialog()
@@ -152,13 +104,7 @@ class KissAnime:
         scrapeParams = { 'scrapeType': EPISODE_SCRAPE_TYPE, 'url': url }
         episodeReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = episodeReturn['links']
-        for videoLinkUrl, videoLinkObj in videoLinks.items():
-            url = self.generateUrl(VIDEO_ACTION, videoLinkUrl)
-            li = xbmcgui.ListItem(videoLinkObj['name'])
-            li.setArt({ 'icon': DEFAULT_VIDEO_IMAGE })
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=False)
-
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+        GuiUtil.list(videoLinks, VIDEO_ACTION, False)
 
     def search(self):
         dialog = xbmcgui.Dialog()
@@ -170,15 +116,7 @@ class KissAnime:
         scrapeParams = { 'scrapeType': SEARCH_SCRAPE_TYPE, 'keyword': keywordInput }
         searchReturn = KissAnimeScrape.scrape(scrapeParams)
         videoLinks = searchReturn['links']
-
-        for videoLinkUrl, videoLinkObj in videoLinks.items():
-            url = self.generateUrl(EPISODES_ACTION, videoLinkUrl)
-            li = xbmcgui.ListItem(videoLinkObj['name'])
-            li.setArt({'icon': videoLinkObj['image']})
-            li.setInfo(type='video', infoLabels={'plot': videoLinkObj['description']})
-            xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
-
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+        GuiUtil.list(videoLinks, EPISODES_ACTION)
 
     ## Plays the video url passed into this function
     #
@@ -189,24 +127,3 @@ class KissAnime:
         videoUrl = videoObj['url']
         videoListItem = xbmcgui.ListItem(path=videoUrl)
         xbmc.Player().play(videoUrl, videoListItem)
-
-    ## Helper function that generates a params object that contains a type
-    #  and url value. Will be used to pass back into this plugin to tell the
-    #  addon where the user is trying to navigate to
-    #
-    #  @param urlType string specifies what kind of url is being passed
-    #                         and is a value the plugin will use to route
-    #                         to new menus
-    #  @param url string     specifies the url that contains content that a new
-    #                        menu will scrape information from
-    def generateUrl(self, urlType, url=None, filter=None):
-        params = {}
-        params['type'] = urlType
-
-        if url: params['url'] = url
-        if filter: params['filter'] = filter
-
-        return self.generateUrlObj(params)
-
-    def generateUrlObj(self, data):
-        return BASE_APP_URL + '?' + urllib.urlencode(data)
