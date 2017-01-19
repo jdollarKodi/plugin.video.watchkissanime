@@ -133,11 +133,32 @@ class KissAnime:
     #
     #  @param url string url of the video stream that kodi will start playing
     def playVideo(self, url):
-        scrapeParams = { 'scrapeType': VIDEO_SCRAPE_TYPE, 'url': url }
-        videoObj = KissAnimeScrape.scrape(scrapeParams)
-        videoUrl = videoObj['url']
-        videoListItem = xbmcgui.ListItem(path=videoUrl)
-        xbmc.Player().play(videoUrl, videoListItem)
+        qualtySelectorValue = None
+        shouldPlayVideo = True
+        qualitySelectorScrape = { 'scrapeType': QUALITY_SELECTOR_SCRAPE_TYPE, 'url': url }
+        selectorObj = KissAnimeScrape.scrape(qualitySelectorScrape)
+
+        if len(selectorObj['labels']) > 0:
+            dialog = xbmcgui.Dialog()
+            selectorPosition = dialog.select('Select Quaility', selectorObj['labels'])
+            if selectorPosition >= 0:
+                qualtySelectorValue = selectorObj['values'][selectorPosition]
+            else:
+                shouldPlayVideo = False
+
+        if shouldPlayVideo:
+            scrapeParams = {
+                'scrapeType': VIDEO_SCRAPE_TYPE,
+                'url': url,
+                'data': {
+                    'selectorValue': qualtySelectorValue
+                }
+            }
+
+            videoObj = KissAnimeScrape.scrape(scrapeParams)
+            videoUrl = videoObj['url']
+            videoListItem = xbmcgui.ListItem(path=videoUrl)
+            xbmc.Player().play(videoUrl, videoListItem)
 
     def getCacheValue(self, filename):
         cacheFile = xbmcvfs.File(filename)

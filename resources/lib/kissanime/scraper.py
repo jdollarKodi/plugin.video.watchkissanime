@@ -57,8 +57,10 @@ class KissAnimeScrape:
             )
         elif scrapeType == EPISODE_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.episodes(data['url'])
+        elif scrapeType == QUALITY_SELECTOR_SCRAPE_TYPE:
+            scrapeData = KissAnimeScrape.quailitySelector(data['url'])
         elif scrapeType == VIDEO_SCRAPE_TYPE:
-            scrapeData = KissAnimeScrape.video(data['url'])
+            scrapeData = KissAnimeScrape.video(data['url'], data['data'])
         elif scrapeType == SEARCH_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.search(data['keyword'])
 
@@ -110,16 +112,48 @@ class KissAnimeScrape:
         response = KissAnimeScrape.getResponseFromServer(episodesEndpoint)
         return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.episodesParser)
 
+    @staticmethod
+    def quailitySelector(quailitySelectorEndpoint):
+        videoSource = KissAnimeScrape.getVideoSourceType()
+        videoPageUrl = KissAnimeScrape.generateVideoPageUrl(quailitySelectorEndpoint, videoSource)
+        response = KissAnimeScrape.getResponseFromServer(videoPageUrl)
+
+        selectorOptionsLabels = []
+        selectorOptionsValues = []
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+        qualitySelector = soup.find('select', {"id": "selectQuality"})
+        if qualitySelector:
+            options = qualitySelector.find_all('option')
+
+            for option in options:
+                selectorOptionsLabels.append(option.string)
+                selectorOptionsValues.append(option['value'])
+
+        return {
+            'labels': selectorOptionsLabels,
+            'values': selectorOptionsValues
+        }
+
     ## Function to return a video url that the plugin will use to start playing
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
     @staticmethod
-    def video(videoPageUrl):
-        videoSourceLabel = SETTINGS_VIDEO_SOURCE_DROPDOWN_MAP[int(ADDON.getSetting(SOURCE_SELECT_ID))]
-        videoSource = VIDEO_SOURCE_MAP[videoSourceLabel]
-        videoPageUrl += '&s=' + videoSource
+    def video(videoPageUrl, data):
+        videoSource = KissAnimeScrape.getVideoSourceType()
+        videoPageUrl = KissAnimeScrape.generateVideoPageUrl(videoPageUrl, videoSource)
         response = KissAnimeScrape.getResponseFromServer(videoPageUrl)
 
-        return KissAnimeScrape.getVideoSrcUrl(response, videoSource)
+        return KissAnimeScrape.getVideoSrcUrl(response, videoSource, data)
+
+    @staticmethod
+    def getVideoSourceType():
+        videoSourceLabel = SETTINGS_VIDEO_SOURCE_DROPDOWN_MAP[int(ADDON.getSetting(SOURCE_SELECT_ID))]
+        return VIDEO_SOURCE_MAP[videoSourceLabel]
+
+    @staticmethod
+    def generateVideoPageUrl(url, videoSource):
+        url += '&s=' + videoSource
+        return url
 
     @staticmethod
     def search(keyword):
@@ -214,20 +248,18 @@ class KissAnimeScrape:
         }
 
     @staticmethod
-    def getVideoSrcUrl(response, videoSourceParam=KISS_ANIME_SOURCE_PARAM):
+    def getVideoSrcUrl(response, videoSourceParam=KISS_ANIME_SOURCE_PARAM, data=None):
         videoUrl = ''
         if videoSourceParam == KISS_ANIME_SOURCE_PARAM:
-            videoUrl = KissAnimeScrape.getKissAnimeVideoSrcUrl(response)
+            videoUrl = KissAnimeScrape.getKissAnimeVideoSrcUrl(data['selectorValue'])
         elif videoSourceParam == OPENLOAD_SOURCE_PARAM:
             videoUrl = KissAnimeScrape.getOpenloadVideoSrcUrl(response)
 
         return videoUrl
 
     @staticmethod
-    def getKissAnimeVideoSrcUrl(response):
-        soup = BeautifulSoup(response.content, 'html.parser')
-        qualitySelector = soup.find('select', {"id": "selectQuality"})
-        videoUrl = KissAnimeScrape.getDecryptedVideoLink(qualitySelector.option['value'])
+    def getKissAnimeVideoSrcUrl(selectorValue):
+        videoUrl = KissAnimeScrape.getDecryptedVideoLink(selectorValue)
         return {
             'url': videoUrl
         }

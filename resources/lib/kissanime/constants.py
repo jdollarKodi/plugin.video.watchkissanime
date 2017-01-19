@@ -19,6 +19,7 @@ SEARCH_SCRAPE_TYPE = 'search'
 ONGOING_SCRAPE_TYPE = 'ongoing'
 COMPLETED_SCRAPE_TYPE = 'completed'
 NEW_AND_HOT_SCRAPE_TYPE = 'newandhot'
+QUALITY_SELECTOR_SCRAPE_TYPE = 'qualitySelector'
 
 LIST_TYPE_DIR = 'directory'
 ITEM_TYPE = 'item'
