@@ -13,7 +13,7 @@
     	<summary lang="en">Provides a kodi addon that is capable of accessing the kissanime site</summary>
         <description lang="en">Anime Videos from KissAnime</description>
         <disclaimer lang="en"></disclaimer>
-        <language>en</language>
+        <language></language>
         <platform>all</platform>
         <license>MIT</license>
         <forum></forum>

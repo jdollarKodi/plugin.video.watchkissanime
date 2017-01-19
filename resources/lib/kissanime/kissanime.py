@@ -55,6 +55,8 @@ class KissAnime:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
         elif self.typeParam[0] == SEARCH_ACTION:
             self.search()
+        elif self.typeParam[0] == SETTINGS_ACTION:
+            ADDON.openSettings()
         else:
             self.cleanCacheFile(LAST_SEARCH_FILE)
             self.mainMenu()

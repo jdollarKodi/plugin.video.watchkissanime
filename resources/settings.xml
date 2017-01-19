@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="30009">
+        <setting label="30010" type="select" id="source_select" lvalues="30011|30012"/>
+    </category>
+</settings>
