@@ -5,6 +5,7 @@
         <import addon="xbmc.gui" version="5.12.0"/>
         <import addon="script.module.beautifulsoup4" version="4.3.2"/>
         <import addon="script.module.cfscrape" version="1.6.8"/>
+        <import addon="script.module.urlresolver" version="2.10.0"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="addon.py">
         <provides>video</provides>

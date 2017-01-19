@@ -1,6 +1,7 @@
 import cfscrape
 import re
 import sys
+import urlresolver
 from constants import *
 from endpoints import *
 
@@ -16,6 +17,7 @@ class KissAnimeScrape:
 
     ANIME_IMAGE_REGEX = re.compile('src=\"(.*?)\"')
     ANIME_DESC_REGEX = re.compile('<p>(.*?)<\/p>', re.DOTALL)
+    OPENLOAD_VIDEO_REGEX = re.compile('\"(http.*openload.*?)\"')
 
     NEXT_RESPONSE_TEXT = 'Next'
     PREV_RESPONSE_TEXT = 'Prev'
@@ -112,8 +114,12 @@ class KissAnimeScrape:
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
     @staticmethod
     def video(videoPageUrl):
+        videoSourceLabel = SETTINGS_VIDEO_SOURCE_DROPDOWN_MAP[int(ADDON.getSetting(SOURCE_SELECT_ID))]
+        videoSource = VIDEO_SOURCE_MAP[videoSourceLabel]
+        videoPageUrl += '&s=' + videoSource
         response = KissAnimeScrape.getResponseFromServer(videoPageUrl)
-        return KissAnimeScrape.getVideoSrcUrl(response)
+
+        return KissAnimeScrape.getVideoSrcUrl(response, videoSource)
 
     @staticmethod
     def search(keyword):
@@ -208,12 +214,39 @@ class KissAnimeScrape:
         }
 
     @staticmethod
-    def getVideoSrcUrl(response):
+    def getVideoSrcUrl(response, videoSourceParam=KISS_ANIME_SOURCE_PARAM):
+        videoUrl = ''
+        if videoSourceParam == KISS_ANIME_SOURCE_PARAM:
+            videoUrl = KissAnimeScrape.getKissAnimeVideoSrcUrl(response)
+        elif videoSourceParam == OPENLOAD_SOURCE_PARAM:
+            videoUrl = KissAnimeScrape.getOpenloadVideoSrcUrl(response)
+
+        return videoUrl
+
+    @staticmethod
+    def getKissAnimeVideoSrcUrl(response):
         soup = BeautifulSoup(response.content, 'html.parser')
         qualitySelector = soup.find('select', {"id": "selectQuality"})
         videoUrl = KissAnimeScrape.getDecryptedVideoLink(qualitySelector.option['value'])
         return {
             'url': videoUrl
+        }
+
+    @staticmethod
+    def getOpenloadVideoSrcUrl(response):
+        videoUrl = None
+        soup = BeautifulSoup(response.content, 'html.parser')
+        scriptTags = soup.find_all('script')
+        for script in scriptTags:
+            if script.string:
+                regexResult = re.search(KissAnimeScrape.OPENLOAD_VIDEO_REGEX, script.string)
+                if regexResult:
+                    foundUrl = regexResult.group(1)
+                    videoUrl = str(urlresolver.HostedMediaFile(foundUrl).resolve());
+                    break
+
+        return {
+            'url': videoUrl if videoUrl else ''
         }
 
     @staticmethod
