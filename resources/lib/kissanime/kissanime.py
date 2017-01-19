@@ -38,24 +38,25 @@ class KissAnime:
         self.route()
 
     def route(self):
-        if self.typeParam[0] == FILTER_ALL_ACTION:
+        route = self.typeParam[0]
+        if route == FILTER_ALL_ACTION:
             self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
-        elif self.typeParam[0] == FILTER_ONGOING_ACTION:
+        elif route == FILTER_ONGOING_ACTION:
             self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
-        elif self.typeParam[0] == FILTER_COMPLETED_ACTION:
+        elif route == FILTER_COMPLETED_ACTION:
             self.filterSort(COMPLETED_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
-        elif self.typeParam[0] == ALL_VIDEOS_ACTION:
+        elif route == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
             self.animeListScrape(url, ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
-        elif self.typeParam[0] == EPISODES_ACTION:
+        elif route == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
-        elif self.typeParam[0] == VIDEO_ACTION:
+        elif route == VIDEO_ACTION:
             self.playVideo(self.urlParam[0])
-        elif self.typeParam[0] == NEW_AND_HOT_ACTION:
+        elif route == NEW_AND_HOT_ACTION:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
-        elif self.typeParam[0] == SEARCH_ACTION:
+        elif route == SEARCH_ACTION:
             self.search()
-        elif self.typeParam[0] == SETTINGS_ACTION:
+        elif route == SETTINGS_ACTION:
             ADDON.openSettings()
         else:
             self.cleanCacheFile(LAST_SEARCH_FILE)
