@@ -51,7 +51,14 @@ class KissAnime:
         elif route == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
         elif route == VIDEO_ACTION:
-            self.playVideo(self.urlParam[0])
+            busyDialog = xbmcgui.DialogBusy()
+            try:
+                busyDialog.create()
+                self.playVideo(self.urlParam[0])
+            except Exception as e:
+                xbmc.log(e)
+            finally:
+                busyDialog.close()
         elif route == NEW_AND_HOT_ACTION:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
         elif route == SEARCH_ACTION:
