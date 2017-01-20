@@ -36,6 +36,17 @@ class GuiUtil:
         return li
 
     @staticmethod
+    def displayLoading(functionCall, args):
+        busyDialog = xbmcgui.DialogBusy()
+        try:
+            busyDialog.create()
+            functionCall(*args)
+        except Exception as e:
+            xbmc.log(e)
+        finally:
+            busyDialog.close()
+
+    @staticmethod
     def generateUrl(urlType, url=None, filter=None):
         params = {}
         params['type'] = urlType

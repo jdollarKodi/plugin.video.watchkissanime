@@ -58,7 +58,7 @@ class KissAnimeScrape:
         elif scrapeType == EPISODE_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.episodes(data['url'])
         elif scrapeType == QUALITY_SELECTOR_SCRAPE_TYPE:
-            scrapeData = KissAnimeScrape.quailitySelector(data['url'])
+            scrapeData = KissAnimeScrape.quailitySelector(data['url'], data['data'])
         elif scrapeType == VIDEO_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.video(data['url'], data['data'])
         elif scrapeType == SEARCH_SCRAPE_TYPE:
@@ -113,9 +113,10 @@ class KissAnimeScrape:
         return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.episodesParser)
 
     @staticmethod
-    def quailitySelector(quailitySelectorEndpoint):
+    def quailitySelector(qualitySelectorEndpoint, data):
+        callback = data['callback']
         videoSource = KissAnimeScrape.getVideoSourceType()
-        videoPageUrl = KissAnimeScrape.generateVideoPageUrl(quailitySelectorEndpoint, videoSource)
+        videoPageUrl = KissAnimeScrape.generateVideoPageUrl(qualitySelectorEndpoint, videoSource)
         response = KissAnimeScrape.getResponseFromServer(videoPageUrl)
 
         selectorOptionsLabels = []
@@ -130,10 +131,14 @@ class KissAnimeScrape:
                 selectorOptionsLabels.append(option.string)
                 selectorOptionsValues.append(option['value'])
 
-        return {
+        selectorResults = {
             'labels': selectorOptionsLabels,
             'values': selectorOptionsValues
         }
+
+        callback(qualitySelectorEndpoint, selectorResults)
+
+        return selectorResults
 
     ## Function to return a video url that the plugin will use to start playing
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
@@ -274,6 +279,7 @@ class KissAnimeScrape:
                 regexResult = re.search(KissAnimeScrape.OPENLOAD_VIDEO_REGEX, script.string)
                 if regexResult:
                     foundUrl = regexResult.group(1)
+                    print foundUrl
                     videoUrl = str(urlresolver.HostedMediaFile(foundUrl).resolve());
                     break
 

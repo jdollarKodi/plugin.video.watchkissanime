@@ -51,14 +51,7 @@ class KissAnime:
         elif route == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
         elif route == VIDEO_ACTION:
-            busyDialog = xbmcgui.DialogBusy()
-            try:
-                busyDialog.create()
-                self.playVideo(self.urlParam[0])
-            except Exception as e:
-                xbmc.log(e)
-            finally:
-                busyDialog.close()
+            GuiUtil.displayLoading(self.playVideo, [self.urlParam[0]])
         elif route == NEW_AND_HOT_ACTION:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
         elif route == SEARCH_ACTION:
@@ -140,32 +133,40 @@ class KissAnime:
     #
     #  @param url string url of the video stream that kodi will start playing
     def playVideo(self, url):
-        qualtySelectorValue = None
-        shouldPlayVideo = True
-        qualitySelectorScrape = { 'scrapeType': QUALITY_SELECTOR_SCRAPE_TYPE, 'url': url }
-        selectorObj = KissAnimeScrape.scrape(qualitySelectorScrape)
+        qualitySelectorScrape = {
+            'scrapeType': QUALITY_SELECTOR_SCRAPE_TYPE,
+            'url': url,
+            'data': { 'callback': self.selectQuality }
+        }
+        KissAnimeScrape.scrape(qualitySelectorScrape)
 
+    def selectQuality(self, url, selectorObj):
+        qualitySelectorValue = None
+        shouldPlayVideo = True
         if len(selectorObj['labels']) > 0:
             dialog = xbmcgui.Dialog()
             selectorPosition = dialog.select('Select Quaility', selectorObj['labels'])
             if selectorPosition >= 0:
-                qualtySelectorValue = selectorObj['values'][selectorPosition]
+                qualitySelectorValue = selectorObj['values'][selectorPosition]
             else:
                 shouldPlayVideo = False
 
         if shouldPlayVideo:
-            scrapeParams = {
-                'scrapeType': VIDEO_SCRAPE_TYPE,
-                'url': url,
-                'data': {
-                    'selectorValue': qualtySelectorValue
-                }
-            }
+            self.loadUpVideo(url, qualitySelectorValue)
 
-            videoObj = KissAnimeScrape.scrape(scrapeParams)
-            videoUrl = videoObj['url']
-            videoListItem = xbmcgui.ListItem(path=videoUrl)
-            xbmc.Player().play(videoUrl, videoListItem)
+    def loadUpVideo(self, url, qualitySelectorValue):
+        scrapeParams = {
+            'scrapeType': VIDEO_SCRAPE_TYPE,
+            'url': url,
+            'data': {
+                'selectorValue': qualitySelectorValue
+            }
+        }
+
+        videoObj = KissAnimeScrape.scrape(scrapeParams)
+        videoUrl = videoObj['url']
+        videoListItem = xbmcgui.ListItem(path=videoUrl)
+        xbmc.Player().play(videoUrl, videoListItem)
 
     def getCacheValue(self, filename):
         cacheFile = xbmcvfs.File(filename)
