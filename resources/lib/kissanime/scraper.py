@@ -18,6 +18,7 @@ class KissAnimeScrape:
     ANIME_IMAGE_REGEX = re.compile('src=\"(.*?)\"')
     ANIME_DESC_REGEX = re.compile('<p>(.*?)<\/p>', re.DOTALL)
     OPENLOAD_VIDEO_REGEX = re.compile('\"(http.*openload.*?)\"')
+    GENRE_TITLE_REGEX = re.compile('genre')
 
     NEXT_RESPONSE_TEXT = 'Next'
     PREV_RESPONSE_TEXT = 'Prev'
@@ -59,6 +60,8 @@ class KissAnimeScrape:
             scrapeData = KissAnimeScrape.episodes(data['url'])
         elif scrapeType == QUALITY_SELECTOR_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.quailitySelector(data['url'], data['data'])
+        elif scrapeType == GENRES_SCRAPE_TYPE:
+            scrapeData = KissAnimeScrape.genres(ANIME_LIST)
         elif scrapeType == VIDEO_SCRAPE_TYPE:
             scrapeData = KissAnimeScrape.video(data['url'], data['data'])
         elif scrapeType == SEARCH_SCRAPE_TYPE:
@@ -88,16 +91,17 @@ class KissAnimeScrape:
             url = filterMap[data['filter']]
 
         response = KissAnimeScrape.getResponseFromServer(url)
-        return KissAnimeScrape.parseIntoListType(response, parser)
+        return KissAnimeScrape.parseIntoListType(response, parser, KissAnimeScrape.parseListingRows)
 
     @staticmethod
-    def parseIntoListType(response, parser):
+    def parseIntoListType(response, parser, linksParser, hasPaging=True):
         soup = BeautifulSoup(response.content,'html.parser')
 
         links = OrderedDict()
-        links = KissAnimeScrape.addPrevLink(soup, links)
-        links = KissAnimeScrape.parseListingRows(soup, links, parser)
-        links = KissAnimeScrape.addNextLink(soup, links)
+        links = linksParser(soup, links, parser)
+
+        if hasPaging:
+            links = KissAnimeScrape.addNextLink(soup, links)
 
         return {
             'links': links,
@@ -110,7 +114,7 @@ class KissAnimeScrape:
     @staticmethod
     def episodes(episodesEndpoint):
         response = KissAnimeScrape.getResponseFromServer(episodesEndpoint)
-        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.episodesParser)
+        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.episodesParser, KissAnimeScrape.parseListingRows)
 
     @staticmethod
     def quailitySelector(qualitySelectorEndpoint, data):
@@ -140,6 +144,11 @@ class KissAnimeScrape:
 
         return selectorResults
 
+    @staticmethod
+    def genres(genresEndpoint):
+        response = KissAnimeScrape.getResponseFromServer(genresEndpoint)
+        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.genreParser, KissAnimeScrape.parseGenreList, False)
+
     ## Function to return a video url that the plugin will use to start playing
     #  @param videoPageUrl url pointing to the webpage where the video link will be found
     @staticmethod
@@ -164,7 +173,7 @@ class KissAnimeScrape:
     def search(keyword):
         data = { "keyword": keyword }
         response = KissAnimeScrape.postResponseToServer(ANIME_SEARCH_ENDPOINT, data)
-        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.commonParser)
+        return KissAnimeScrape.parseIntoListType(response, KissAnimeScrape.commonParser, KissAnimeScrape.parseListingRows)
 
     @staticmethod
     def commonParser(tableRow, links):
@@ -197,6 +206,16 @@ class KissAnimeScrape:
         return links
 
     @staticmethod
+    def genreParser(anchor, links):
+        links[anchor['href']] = KissAnimeScrape.generateLinkObj(
+            anchor.string.strip(),
+            '',
+            ''
+        )
+
+        return links
+
+    @staticmethod
     def parseListingRows(soup, links, parser):
         tableRows = KissAnimeScrape.getListingRows(soup)
 
@@ -204,6 +223,24 @@ class KissAnimeScrape:
             for tableRow in tableRows:
                 if tableRow.td is not None:
                     links = parser(tableRow, links)
+
+        return links
+
+    @staticmethod
+    def parseGenreList(soup, links, parser):
+        anchorTags = []
+        barTitleDivs = soup.find_all('div', { "class": "barTitle" })
+
+        if barTitleDivs:
+
+            for barTitleDiv in barTitleDivs:
+                if re.search(KissAnimeScrape.GENRE_TITLE_REGEX, barTitleDiv.string):
+                    anchorTags = barTitleDiv.findNext('div').find_all('a')
+                    break
+
+            for anchorTag in anchorTags:
+                if anchorTag is not None:
+                    links = parser(anchorTag, links)
 
         return links
 

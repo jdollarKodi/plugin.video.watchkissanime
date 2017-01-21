@@ -54,6 +54,8 @@ class KissAnime:
             GuiUtil.displayLoading(self.playVideo, [self.urlParam[0]])
         elif route == NEW_AND_HOT_ACTION:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
+        elif route == GENRES_ACTION:
+            self.animeListScrape(self.urlParam[0], GENRES_SCRAPE_TYPE, ALL_VIDEOS_ACTION, ALL_VIDEOS_ACTION)
         elif route == SEARCH_ACTION:
             self.search()
         elif route == SETTINGS_ACTION:
