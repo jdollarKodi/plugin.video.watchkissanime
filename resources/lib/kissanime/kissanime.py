@@ -41,28 +41,37 @@ class KissAnime:
         route = self.typeParam[0]
         if route == FILTER_ALL_ACTION:
             self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
+            GuiUtil.setThumbnailView()
         elif route == FILTER_ONGOING_ACTION:
             self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
+            GuiUtil.setThumbnailView()
         elif route == FILTER_COMPLETED_ACTION:
             self.filterSort(COMPLETED_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
+            GuiUtil.setThumbnailView()
         elif route == ALL_VIDEOS_ACTION:
             url = self.urlParam[0]
             self.animeListScrape(url, ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
+            GuiUtil.setThumbnailView()
         elif route == EPISODES_ACTION:
             self.episodeLinks(self.urlParam[0])
+            GuiUtil.setWideListView()
         elif route == VIDEO_ACTION:
             GuiUtil.displayLoading(self.playVideo, [self.urlParam[0]])
         elif route == NEW_AND_HOT_ACTION:
             self.animeListScrape(self.urlParam[0], NEW_AND_HOT_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION)
+            GuiUtil.setThumbnailView()
         elif route == GENRES_ACTION:
             self.animeListScrape(self.urlParam[0], GENRES_SCRAPE_TYPE, ALL_VIDEOS_ACTION, ALL_VIDEOS_ACTION)
+            GuiUtil.setWideListView()
         elif route == SEARCH_ACTION:
             self.search()
+            GuiUtil.setThumbnailView()
         elif route == SETTINGS_ACTION:
             ADDON.openSettings()
         else:
             self.cleanCacheFile(LAST_SEARCH_FILE)
             self.mainMenu()
+            GuiUtil.setListView()
 
     ## Builds out the main menu for the starting point of the addon
     #

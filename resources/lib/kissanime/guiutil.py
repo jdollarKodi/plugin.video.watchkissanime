@@ -1,8 +1,10 @@
+import xbmc
 import xbmcgui
 import xbmcplugin
 import urllib
 
 from constants import *
+from skinViews import *
 
 class GuiUtil:
 
@@ -45,6 +47,28 @@ class GuiUtil:
             xbmc.log(e)
         finally:
             busyDialog.close()
+
+    @staticmethod
+    def setWideListView():
+        GuiUtil.setViewMode('wideList')
+
+    @staticmethod
+    def setListView():
+        GuiUtil.setViewMode('list')
+
+    @staticmethod
+    def setThumbnailView():
+        GuiUtil.setViewMode('infoWall')
+
+    @staticmethod
+    def setViewMode(modeType):
+        skin_used = xbmc.getSkinDir()
+        skinDict = VIEW_MODES[modeType]
+
+        if skin_used in skinDict:
+            viewMode = skinDict[skin_used]
+            if viewMode:
+                xbmc.executebuiltin('Container.SetViewMode(' + viewMode + ')')
 
     @staticmethod
     def generateUrl(urlType, url=None, filter=None):
