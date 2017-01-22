@@ -8,6 +8,13 @@ BASE_APP_URL = sys.argv[0][:-1]
 
 ADDON = xbmcaddon.Addon()
 LAST_SEARCH_FILE = xbmc.translatePath( 'special://temp/' + ADDON.getAddonInfo('id') + '.lastSearch' ).decode("utf-8")
+REQUEST_SESSION_FILE = xbmc.translatePath( 'special://profile/addon_data/' + ADDON.getAddonInfo('id') + '/session' ).decode("utf-8")
+CF_COOKIE_FILE = xbmc.translatePath( 'special://profile/addon_data/' + ADDON.getAddonInfo('id') + '/cf_cookie' ).decode("utf-8")
+USER_AGENT_FILE = xbmc.translatePath( 'special://profile/addon_data/' + ADDON.getAddonInfo('id') + '/user_agent' ).decode("utf-8")
+
+CF_CLEARANCE_COOKIE_KEY = 'cf_clearance'
+CF_DUID_COOKIE_KEY = '__cfduid'
+CF_USER_AGENT_KEY = 'User-Agent'
 
 DEFAULT_VIDEO_IMAGE = 'DefaultVideo.png'
 CONTENT_TYPE_MOVIES = 'movies'

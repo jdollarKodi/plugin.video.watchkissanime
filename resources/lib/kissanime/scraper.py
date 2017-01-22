@@ -1,7 +1,9 @@
 import cfscrape
+import xbmcvfs
 import re
 import sys
 import urlresolver
+import pickle
 from constants import *
 from endpoints import *
 
@@ -69,16 +71,56 @@ class KissAnimeScrape:
 
         return scrapeData
 
+    @staticmethod
+    def createScraper():
+        scraper = cfscrape.create_scraper()
+        scraper = KissAnimeScrape.setupScraperCookieData(scraper)
+        return scraper
+
+    @staticmethod
+    def setupScraperCookieData(scraper):
+        cfClearanceCookieData = '';
+        cfduidCookieData = '';
+        userAgentData = '';
+
+        if xbmcvfs.exists(CF_COOKIE_FILE):
+            cfCookieFile = open(CF_COOKIE_FILE, 'rb')
+            existingCookies = pickle.load( cfCookieFile )
+            cfCookieFile.close()
+
+            cfClearanceCookieData = existingCookies[CF_CLEARANCE_COOKIE_KEY]
+            cfduidCookieData = existingCookies[CF_DUID_COOKIE_KEY]
+            userAgentData = existingCookies[CF_USER_AGENT_KEY]
+        else:
+            cookieData = scraper.get_tokens(KissAnimeScrape.BASE_URL)
+            (cookieDict, useragent) = cookieData
+            cookieDict[CF_USER_AGENT_KEY] = useragent
+
+            cookieFile = open(CF_COOKIE_FILE, 'wb')
+            pickle.dump( cookieDict, cookieFile )
+            cookieFile.close()
+
+            cfClearanceCookieData = cookieDict[CF_CLEARANCE_COOKIE_KEY]
+            cfduidCookieData = cookieDict[CF_DUID_COOKIE_KEY]
+            userAgentData = useragent
+
+        scraper.cookies.set(CF_CLEARANCE_COOKIE_KEY, cfClearanceCookieData)
+        scraper.cookies.set(CF_DUID_COOKIE_KEY, cfduidCookieData)
+        scraper.headers[CF_USER_AGENT_KEY] = userAgentData
+
+        return scraper
+
     ## Scrapes the website and pulls the response from the server
     @staticmethod
     def getResponseFromServer(endpoint):
-        scraper = cfscrape.create_scraper()
+        scraper = KissAnimeScrape.createScraper()
+
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
         return scraper.get(scrapeUrl)
 
     @staticmethod
     def postResponseToServer(endpoint, data):
-        scraper = cfscrape.create_scraper()
+        scraper = KissAnimeScrape.createScraper()
         scrapeUrl = KissAnimeScrape.BASE_URL + endpoint
         return scraper.post(scrapeUrl, data=data)
 
@@ -316,7 +358,6 @@ class KissAnimeScrape:
                 regexResult = re.search(KissAnimeScrape.OPENLOAD_VIDEO_REGEX, script.string)
                 if regexResult:
                     foundUrl = regexResult.group(1)
-                    print foundUrl
                     videoUrl = str(urlresolver.HostedMediaFile(foundUrl).resolve());
                     break
 
