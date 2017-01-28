@@ -6,6 +6,8 @@ import xbmcplugin
 import xbmcgui
 import xbmcvfs
 
+from ..Scraper.KissAnimeScraper import KissAnimeScraper
+from resources.lib.Display.Functions.ListLinkDirectory.ListLinkDirectory import ListLinkDirectory
 from scraper import KissAnimeScrape
 from guiutil import GuiUtil
 import cfscrape
@@ -40,8 +42,12 @@ class KissAnime:
     def route(self):
         route = self.typeParam[0]
         if route == FILTER_ALL_ACTION:
-            self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
-            GuiUtil.setThumbnailView()
+            scraper = KissAnimeScraper()
+            linkList = scraper.scrapeAnimeList()
+            listDirectory = ListLinkDirectory()
+            listDirectory.create(linkList)
+            #self.filterSort(ALL_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
+            #GuiUtil.setThumbnailView()
         elif route == FILTER_ONGOING_ACTION:
             self.filterSort(ONGOING_SCRAPE_TYPE, EPISODES_ACTION, ALL_VIDEOS_ACTION, self.animeListScrape)
             GuiUtil.setThumbnailView()

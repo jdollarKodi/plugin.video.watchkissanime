@@ -207,6 +207,10 @@ class KissAnimeScrape:
         return VIDEO_SOURCE_MAP[videoSourceLabel]
 
     @staticmethod
+    def getUpcomingAnimeInformation():
+        return true;
+
+    @staticmethod
     def generateVideoPageUrl(url, videoSource):
         url += '&s=' + videoSource
         return url
@@ -256,6 +260,14 @@ class KissAnimeScrape:
         )
 
         return links
+
+    @staticmethod
+    def upcomingParser(divWithInfo, links):
+        childDivs = divWithInfo.select('div')
+        image = childDivs[0].a.img['src']
+        title = childDivs[1].find(attr={'class': 'title'}).string
+        generes = list(map(lambda anchor: anchor.string, childDivs[1].select('p')[0].find_all('a')))
+        info = childDivs[1].select('p')[3].span.string
 
     @staticmethod
     def parseListingRows(soup, links, parser):

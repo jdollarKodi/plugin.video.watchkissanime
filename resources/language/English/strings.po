@@ -65,3 +65,19 @@ msgstr ""
 msgctxt "#30012"
 msgid "Openload"
 msgstr ""
+
+msgctxt "#30013"
+msgid "Ongoing"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Completed"
+msgstr ""
+
+msgctxt "#30015"
+msgid "New and Hot"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Genres"
+msgstr ""

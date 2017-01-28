@@ -32,21 +32,23 @@ GENRES_SCRAPE_TYPE = 'genres'
 LIST_TYPE_DIR = 'directory'
 ITEM_TYPE = 'item'
 PAGE_TYPE = 'page'
+LISTING_TYPE = 'listing'
+SELECTION_TYPE = 'selection'
 
-LIST_ALL_ANIME_LABEL = 'List All Anime'
-SEARCH_LABEL = 'Search'
-NEXT_LABEL = 'Next Page'
-PREV_LABEL = 'Previous Page'
-SORT_ALPHABETICALLY_LABEL = 'Sort alphabetically'
-SORT_BY_POPULAR_LABEL = 'Sort by popularity'
-LATEST_UPDATE_LABEL = 'Latest update'
-NEW_ANIME_LABEL = 'New anime'
-UPCOMING_ANIME_LABEL = 'Upcoming anime'
-ONGOING_LABEL = 'Ongoing'
-COMPLETED_LABEL = 'Completed'
-NEW_AND_HOT_LABEL = 'New and Hot'
-SETTINGS_LABEL = 'Settings'
-GENRES_LABEL = 'Genres'
+LIST_ALL_ANIME_LABEL = ADDON.getLocalizedString(30000)
+SEARCH_LABEL = ADDON.getLocalizedString(30001)
+NEXT_LABEL = ADDON.getLocalizedString(30002)
+PREV_LABEL = ADDON.getLocalizedString(30003)
+SORT_ALPHABETICALLY_LABEL = ADDON.getLocalizedString(30004)
+SORT_BY_POPULAR_LABEL = ADDON.getLocalizedString(30005)
+LATEST_UPDATE_LABEL = ADDON.getLocalizedString(30006)
+NEW_ANIME_LABEL = ADDON.getLocalizedString(30007)
+UPCOMING_ANIME_LABEL = ADDON.getLocalizedString(30008)
+ONGOING_LABEL = ADDON.getLocalizedString(30013)
+COMPLETED_LABEL = ADDON.getLocalizedString(30014)
+NEW_AND_HOT_LABEL = ADDON.getLocalizedString(30015)
+SETTINGS_LABEL = ADDON.getLocalizedString(30009)
+GENRES_LABEL = ADDON.getLocalizedString(30016)
 
 KISS_ANIME_SOURCE_TYPE = ADDON.getLocalizedString(30011)
 OPENLOAD_SOURCE_TYPE = ADDON.getLocalizedString(30012)
@@ -101,6 +103,7 @@ MAIN_MENU_ITEMS = OrderedDict(
         (FILTER_COMPLETED_ACTION, COMPLETED_LABEL),
         (NEW_AND_HOT_ACTION, NEW_AND_HOT_LABEL),
         (GENRES_ACTION, GENRES_LABEL),
+        (UPCOMING_ANIME_ACTION, UPCOMING_ANIME_LABEL),
         (SEARCH_ACTION, SEARCH_LABEL),
         (SETTINGS_ACTION, SETTINGS_LABEL)
     ]
